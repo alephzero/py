@@ -9,7 +9,7 @@ matrix:
   include:
   - name: Basic Tests
     before_install:
-      - python3 -m pip install --user --upgrade pip wheel setuptools pytest
+      - python3 -m pip install --upgrade pip wheel setuptools pytest
     install:
       - python3 -m pip install -r requirements.txt
       - python3 setup.py install
