@@ -1,0 +1,14 @@
+os: linux
+dist: bionic
+language: cpp
+
+matrix:
+  include:
+  - name: Basic Tests
+    before_install:
+      - python3 -m pip install --user --upgrade pip wheel setuptools pytest
+    install:
+      - python3 -m pip install -r requirements.txt
+      - python3 setup.py install
+    script:
+      python3 -m pytest tests/
