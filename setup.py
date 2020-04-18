@@ -10,7 +10,8 @@ module = Extension('alephzero_bindings',
                    library_dirs = ['/usr/lib'],
                    libraries = ['alephzero'],
                    sources = ['module.cc'],
-                   extra_compile_args = ['-std=c++17'])
+                   extra_compile_args = ['-std=c++17'],
+                   extra_link_args=['-lrt'])
 
 setup(name = 'alephzero',
       version = '0.1',
