@@ -1,4 +1,5 @@
 # Aleph Zero: Python
+[![Build Status](https://travis-ci.com/alephzero/py.svg?branch=master)](https://travis-ci.com/alephzero/py)
 
 TODO: What is it? Why is it? Who is it????
 
