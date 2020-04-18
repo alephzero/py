@@ -1,7 +1,12 @@
 from distutils.core import setup, Extension
+import pybind11
 
 module = Extension('alephzero_bindings',
-                   include_dirs = ['/usr/include'],
+                   include_dirs = [
+                       '/usr/include',
+                        pybind11.get_include(True),
+                        pybind11.get_include(False),
+                   ],
                    library_dirs = ['/usr/lib'],
                    libraries = ['alephzero'],
                    sources = ['module.cc'],
