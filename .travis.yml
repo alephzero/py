@@ -11,7 +11,7 @@ matrix:
     before_install:
       - python3 -m pip install --upgrade pip wheel setuptools pytest
     install:
-      - pushd ./alephzero/ && make install -j && popd
+      - pushd ./alephzero/ && sudo make install -j && popd
       - python3 -m pip install -r requirements.txt
       - python3 setup.py install
     script:
