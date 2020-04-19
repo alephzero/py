@@ -35,10 +35,13 @@ module = Extension('alephzero_bindings',
                        pkgconfig('alephzero'),
                        {
                            'include_dirs': [
-                                pybind11.get_include(True),
-                                pybind11.get_include(False),
-                            ],
-                       },
+                               pybind11.get_include(True),
+                               pybind11.get_include(False),
+                           ],
+                           'extra_compile_args': [
+                               '-std=c++17',
+                           ],
+                       }
                    ))
 
 setup(name = 'alephzero',
