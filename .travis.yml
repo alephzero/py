@@ -12,18 +12,14 @@ branches:
 matrix:
   include:
   - name: Basic Tests
-    addons:
-      apt:
-        packages:
-          - lcov
     before_install:
-      - python3 -m pip install -U pip wheel setuptools pytest
+      - python3 -m pip install -U pip wheel setuptools pytest pytest-cov
     install:
       - pushd ./alephzero/ && sudo make install -j && popd
       - python3 -m pip install -r requirements.txt
       - CFLAGS="-O0 -fprofile-arcs -ftest-coverage --coverage" python3 setup.py install
     script:
-      - python3 -m pytest tests/ --cov
+      - python3 -m pytest --cov=a0 tests/
       - gcov -o build/temp.linux-x86_64-3.6/ module.cc
     after_success:
       - bash <(curl -s https://codecov.io/bash)
