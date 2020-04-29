@@ -23,3 +23,9 @@ matrix:
       - gcov -o build/temp.linux-x86_64-3.6/ module.cc
     after_success:
       - bash <(curl -s https://codecov.io/bash)
+  - name: Lint
+    install:
+      - python -m pip install -U flake8 yapf
+    script:
+      - python -m yapf -d -r .
+      - python -m flake8
