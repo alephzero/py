@@ -1,5 +1,4 @@
 import a0
-import pytest
 
 
 def test_constructor():

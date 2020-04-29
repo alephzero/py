@@ -4,3 +4,5 @@ max-line-length = 100
 # TODO: Fix the code and remove this.
 ignore =
   E722,  # bare-except
+  F403,  # star import used; unable to detect undefined names
+  F405,  # [module] may be undefined, or defined from star imports

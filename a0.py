@@ -5,6 +5,7 @@ import types
 
 
 class aio_sub:
+
     def __init__(self, shm, init_, iter_, loop=None):
         ns = types.SimpleNamespace()
         ns.loop = loop or asyncio.get_event_loop()
@@ -19,8 +20,10 @@ class aio_sub:
             with ns.cv:
                 if ns.closing:
                     return
+
                 def onloop():
                     asyncio.ensure_future(ns.q.put(pkt))
+
                 ns.loop.call_soon_threadsafe(onloop)
                 ns.cv.wait()
 
@@ -49,6 +52,7 @@ async def aio_sub_one(shm, init_, loop=None):
 
 
 class AioRpcClient:
+
     def __init__(self, shm, loop=None):
         self._loop = loop or asyncio.get_event_loop()
         self._client = RpcClient(shm)
@@ -59,8 +63,10 @@ class AioRpcClient:
 
         def callback(pkt_view):
             pkt = Packet(pkt_view)
+
             def onloop():
                 ns.fut.set_result(pkt)
+
             self._loop.call_soon_threadsafe(onloop)
 
         self._client.send(pkt, callback)
