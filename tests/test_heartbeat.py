@@ -5,6 +5,7 @@ import time
 
 
 class State:
+
     def __init__(self):
         self.detected_cnt = 0
         self.missed_cnt = 0
@@ -26,14 +27,12 @@ def test_shm():
 def test_shb_shbl_ehbl_ehb(test_shm):
     hb = a0.Heartbeat(test_shm, a0.Heartbeat.Options(freq=100))
     a0.Subscriber.read_one(test_shm, a0.INIT_MOST_RECENT)
-    
+
     s = State()
 
-    hbl = a0.HeartbeatListener(
-        test_shm,
-        a0.HeartbeatListener.Options(min_freq=75),
-        s.ondetected,
-        s.onmissed)
+    hbl = a0.HeartbeatListener(test_shm,
+                               a0.HeartbeatListener.Options(min_freq=75),
+                               s.ondetected, s.onmissed)
 
     time.sleep(1.0 / 50.0)
 
@@ -49,11 +48,9 @@ def test_shb_shbl_ehb_ehbl(test_shm):
 
     s = State()
 
-    hbl = a0.HeartbeatListener(
-        test_shm,
-        a0.HeartbeatListener.Options(min_freq=75),
-        s.ondetected,
-        s.onmissed)
+    hbl = a0.HeartbeatListener(test_shm,
+                               a0.HeartbeatListener.Options(min_freq=75),
+                               s.ondetected, s.onmissed)
 
     time.sleep(1.0 / 50.0)
 
@@ -71,11 +68,9 @@ def test_shb_shbl_ehb_ehbl(test_shm):
 def test_shbl_shb_ehb_ehbl(test_shm):
     s = State()
 
-    hbl = a0.HeartbeatListener(
-        test_shm,
-        a0.HeartbeatListener.Options(min_freq=75),
-        s.ondetected,
-        s.onmissed)
+    hbl = a0.HeartbeatListener(test_shm,
+                               a0.HeartbeatListener.Options(min_freq=75),
+                               s.ondetected, s.onmissed)
 
     time.sleep(1.0 / 50.0)
 
@@ -108,11 +103,9 @@ def test_ignore_old(test_shm):
 
     s = State()
 
-    hbl = a0.HeartbeatListener(
-        test_shm,
-        a0.HeartbeatListener.Options(min_freq=75),
-        s.ondetected,
-        s.onmissed)
+    hbl = a0.HeartbeatListener(test_shm,
+                               a0.HeartbeatListener.Options(min_freq=75),
+                               s.ondetected, s.onmissed)
 
     time.sleep(1.0 / 50.0)
 
@@ -130,7 +123,8 @@ def test_ignore_old(test_shm):
 def test_async_close(test_shm):
     hb = a0.Heartbeat(test_shm, a0.Heartbeat.Options(freq=100))
 
-    class NS: pass
+    class NS:
+        pass
 
     ns = NS()
     ns.init_event = threading.Event()
@@ -145,12 +139,9 @@ def test_async_close(test_shm):
 
         ns.hbl.async_close(trigger_stop)
 
-
-    ns.hbl = a0.HeartbeatListener(
-        test_shm,
-        a0.HeartbeatListener.Options(min_freq=75),
-        ondetected,
-        None)
+    ns.hbl = a0.HeartbeatListener(test_shm,
+                                  a0.HeartbeatListener.Options(min_freq=75),
+                                  ondetected, None)
 
     assert ns.init_event.wait(timeout=1.0 / 50.0)
     assert ns.stop_event.wait(timeout=1.0 / 50.0)
