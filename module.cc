@@ -18,17 +18,18 @@ template <typename T>
 using nogil_holder = std::unique_ptr<T, NoGilDeleter<T>>;
 
 PYBIND11_MODULE(alephzero_bindings, m) {
-  py::class_<a0::Shm> pyshmobj(m, "Shm");
+  py::class_<a0::Shm> pyshm(m, "Shm");
 
-  py::class_<a0::Shm::Options>(pyshmobj, "Options")
+  py::class_<a0::Shm::Options>(pyshm, "Options")
       .def(py::init<>())
       .def(py::init([](off_t size) {
              return a0::Shm::Options{size};
            }),
            py::arg("size"))
-      .def_readwrite("size", &a0::Shm::Options::size);
+      .def_readwrite("size", &a0::Shm::Options::size)
+      .def_readonly_static("DEFAULT", &a0::Shm::Options::DEFAULT);
 
-  pyshmobj
+  pyshm
       .def(py::init<const std::string_view>())
       .def(py::init<const std::string_view, const a0::Shm::Options&>())
       .def_property_readonly("path", &a0::Shm::path)
@@ -98,6 +99,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def_readwrite("rpc_client_aliases", &a0::TopicManager::rpc_client_aliases)
       .def_readwrite("prpc_client_aliases", &a0::TopicManager::prpc_client_aliases)
       .def("config_topic", &a0::TopicManager::config_topic)
+      .def("heartbeat_topic", &a0::TopicManager::heartbeat_topic)
       .def("log_crit_topic", &a0::TopicManager::log_crit_topic)
       .def("log_err_topic", &a0::TopicManager::log_err_topic)
       .def("log_warn_topic", &a0::TopicManager::log_warn_topic)
@@ -234,4 +236,48 @@ PYBIND11_MODULE(alephzero_bindings, m) {
                              std::function<void(const a0::PacketView&, bool)>>(
                &a0::PrpcClient::connect))
       .def("cancel", &a0::PrpcClient::cancel);
+
+  py::class_<a0::Heartbeat> pyheartbeat(m, "Heartbeat");
+
+  py::class_<a0::Heartbeat::Options>(pyheartbeat, "Options")
+      .def(py::init<>())
+      .def(py::init([](double freq) {
+             return a0::Heartbeat::Options{freq};
+           }),
+           py::arg("freq"))
+      .def_readwrite("freq", &a0::Heartbeat::Options::freq)
+      .def_readonly_static("DEFAULT", &a0::Heartbeat::Options::DEFAULT);
+
+  pyheartbeat
+      .def(py::init<a0::Shm, a0::Heartbeat::Options>(), py::arg("shm"), py::arg("options"))
+      .def(py::init<a0::Shm>(), py::arg("shm"))
+      .def(py::init<a0::Heartbeat::Options>(), py::arg("options"))
+      .def(py::init());
+
+  py::class_<a0::HeartbeatListener, nogil_holder<a0::HeartbeatListener>>
+  pyheartbeatlistener(m, "HeartbeatListener");
+
+  py::class_<a0::HeartbeatListener::Options>(pyheartbeatlistener, "Options")
+      .def(py::init<>())
+      .def(py::init([](double min_freq) {
+             return a0::HeartbeatListener::Options{min_freq};
+           }),
+           py::arg("min_freq"))
+      .def_readwrite("min_freq", &a0::HeartbeatListener::Options::min_freq)
+      .def_readonly_static("DEFAULT", &a0::HeartbeatListener::Options::DEFAULT);
+
+  pyheartbeatlistener
+      .def(py::init<a0::Shm, a0::HeartbeatListener::Options, std::function<void()>, std::function<void()>>(),
+           py::arg("shm"), py::arg("options"), py::arg("ondetected"), py::arg("onmissed"))
+      .def(py::init<a0::Shm, std::function<void()>, std::function<void()>>(),
+           py::arg("shm"), py::arg("ondetected"), py::arg("onmissed"))
+      .def(py::init<const std::string_view, a0::HeartbeatListener::Options, std::function<void()>, std::function<void()>>(),
+           py::arg("container"), py::arg("options"), py::arg("ondetected"), py::arg("onmissed"))
+      .def(py::init<const std::string_view, std::function<void()>, std::function<void()>>(),
+           py::arg("container"), py::arg("ondetected"), py::arg("onmissed"))
+      .def(py::init<a0::HeartbeatListener::Options, std::function<void()>, std::function<void()>>(),
+           py::arg("options"), py::arg("ondetected"), py::arg("onmissed"))
+      .def(py::init<std::function<void()>, std::function<void()>>(),
+           py::arg("ondetected"), py::arg("onmissed"))
+      .def("async_close", &a0::HeartbeatListener::async_close);
 }
