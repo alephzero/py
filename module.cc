@@ -154,7 +154,8 @@ PYBIND11_MODULE(alephzero_bindings, m) {
                     std::function<void(a0::PacketView)>>())
       .def("async_close", &a0::Subscriber::async_close)
       .def_static("read_one",
-                  py::overload_cast<a0::Shm, a0_subscriber_init_t, int>(&a0::Subscriber::read_one),
+                  py::overload_cast<const a0::Shm&, a0_subscriber_init_t, int>(
+                      &a0::Subscriber::read_one),
                   py::arg("shm"),
                   py::arg("seek"),
                   py::arg("flags") = 0)
