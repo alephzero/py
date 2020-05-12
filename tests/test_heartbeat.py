@@ -132,7 +132,7 @@ def test_async_close(test_shm):
     ns.hbl = None
 
     def ondetected():
-        ns.init_event.set()
+        assert ns.init_event.wait(timeout=1.0 / 50.0)
 
         def trigger_stop():
             ns.stop_event.set()
@@ -143,7 +143,7 @@ def test_async_close(test_shm):
                                   a0.HeartbeatListener.Options(min_freq=75),
                                   ondetected, None)
 
-    assert ns.init_event.wait(timeout=1.0 / 50.0)
+    ns.init_event.set()
     assert ns.stop_event.wait(timeout=1.0 / 50.0)
 
     del ns.hbl
