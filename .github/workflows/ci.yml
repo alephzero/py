@@ -31,10 +31,10 @@ jobs:
       run: CFLAGS="-O0 -fprofile-arcs -ftest-coverage --coverage" python3 setup.py install
     - name: run tests
       run: python3 -m pytest --cov=a0 tests/
-    - name: generate coverage
-      run: gcov -o build/temp.linux-x86_64-3.6/ module.cc
-    - name: upload coverage
-      run: bash <(curl -s https://codecov.io/bash)
+    # - name: generate coverage
+    #   run: gcov -o build/temp.linux-x86_64-3.6/ module.cc
+    # - name: upload coverage
+    #   run: bash <(curl -s https://codecov.io/bash)
 
 
   lint:
