@@ -8,12 +8,12 @@ on:
 
 jobs:
 
-  bionic:
-    name: Ubuntu Bionic
+  focal:
+    name: Ubuntu Focal
 
     runs-on: ubuntu-latest
     container:
-      image: 'ubuntu:18.04'
+      image: 'ubuntu:20.04'
 
     steps:
     - name: install apt deps
