@@ -24,7 +24,7 @@ jobs:
     - name: install pip requirements
       run: python3 -m pip install -r requirements.txt
     - name: install alephzero core
-      run: pushd ./alephzero/ && make install -j && popd
+      run: cd ./alephzero/ && make install -j && cd ..
     - name: install alephzero python
       run: CFLAGS="-O0 -fprofile-arcs -ftest-coverage --coverage" python3 setup.py install
     - name: run tests
