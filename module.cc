@@ -18,16 +18,44 @@ template <typename T>
 using nogil_holder = std::unique_ptr<T, NoGilDeleter<T>>;
 
 PYBIND11_MODULE(alephzero_bindings, m) {
+  py::class_<a0::File> pyfile(m, "File");
   py::class_<a0::Shm> pyshm(m, "Shm");
   py::class_<a0::Disk> pydisk(m, "Disk");
 
   py::class_<a0::Arena>(m, "Arena")
+      .def(py::init<a0::File>())
       .def(py::init<a0::Shm>())
       .def(py::init<a0::Disk>())
       .def_property_readonly("size", &a0::Arena::size);
 
+  py::implicitly_convertible<a0::File, a0::Arena>();
   py::implicitly_convertible<a0::Shm, a0::Arena>();
   py::implicitly_convertible<a0::Disk, a0::Arena>();
+
+  py::class_<a0::File::Options> pyfileopts(pyfile, "Options");
+
+  py::class_<a0::File::Options::CreateOptions>(pyfileopts, "CreateOptions")
+      .def_readwrite("size", &a0::File::Options::CreateOptions::size)
+      .def_readwrite("mode", &a0::File::Options::CreateOptions::mode)
+      .def_readwrite("dir_mode", &a0::File::Options::CreateOptions::dir_mode);
+
+  py::class_<a0::File::Options::OpenOptions>(pyfileopts, "OpenOptions")
+      .def_readwrite("readonly", &a0::File::Options::OpenOptions::readonly);
+
+  pyfileopts
+      .def(py::init<>())
+      .def_readwrite("create_options", &a0::File::Options::create_options)
+      .def_readwrite("open_options", &a0::File::Options::open_options)
+      .def_readonly_static("DEFAULT", &a0::File::Options::DEFAULT);
+
+  pyfile
+      .def(py::init<std::string_view>())
+      .def(py::init<std::string_view, a0::File::Options>())
+      .def_property_readonly("size", &a0::File::size)
+      .def_property_readonly("path", &a0::File::path)
+      .def_property_readonly("id", &a0::File::fd)
+      .def_static("remove", &a0::File::remove)
+      .def_static("remove_all", &a0::File::remove_all);
 
   py::class_<a0::Shm::Options>(pyshm, "Options")
       .def(py::init<>())
