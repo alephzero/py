@@ -43,7 +43,7 @@ module = Extension('alephzero_bindings',
                        }))
 
 setup(name='alephzero',
-      version='0.1',
+      version='0.2.0',
       description='TODO: description',
       author='Leonid Shamis',
       author_email='leonid.shamis@gmail.com',
