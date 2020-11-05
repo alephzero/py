@@ -18,19 +18,19 @@ class State:
 
 
 @pytest.fixture()
-def test_shm():
-    a0.Shm.unlink("/test.shm")
-    yield a0.Shm("/test.shm")
-    a0.Shm.unlink("/test.shm")
+def test_file():
+    a0.File.remove("test.file")
+    yield a0.File("test.file")
+    a0.File.remove("test.file")
 
 
-def test_shb_shbl_ehbl_ehb(test_shm):
-    hb = a0.Heartbeat(test_shm, a0.Heartbeat.Options(freq=100))
-    a0.Subscriber.read_one(test_shm, a0.INIT_MOST_RECENT)
+def test_shb_shbl_ehbl_ehb(test_file):
+    hb = a0.Heartbeat(test_file, a0.Heartbeat.Options(freq=100))
+    a0.Subscriber.read_one(test_file, a0.INIT_MOST_RECENT)
 
     s = State()
 
-    hbl = a0.HeartbeatListener(test_shm,
+    hbl = a0.HeartbeatListener(test_file,
                                a0.HeartbeatListener.Options(min_freq=75),
                                s.ondetected, s.onmissed)
 
@@ -42,13 +42,13 @@ def test_shb_shbl_ehbl_ehb(test_shm):
     assert s.missed_cnt == 0
 
 
-def test_shb_shbl_ehb_ehbl(test_shm):
-    hb = a0.Heartbeat(test_shm, a0.Heartbeat.Options(freq=100))
-    a0.Subscriber.read_one(test_shm, a0.INIT_MOST_RECENT)
+def test_shb_shbl_ehb_ehbl(test_file):
+    hb = a0.Heartbeat(test_file, a0.Heartbeat.Options(freq=100))
+    a0.Subscriber.read_one(test_file, a0.INIT_MOST_RECENT)
 
     s = State()
 
-    hbl = a0.HeartbeatListener(test_shm,
+    hbl = a0.HeartbeatListener(test_file,
                                a0.HeartbeatListener.Options(min_freq=75),
                                s.ondetected, s.onmissed)
 
@@ -65,10 +65,10 @@ def test_shb_shbl_ehb_ehbl(test_shm):
     assert s.missed_cnt == 1
 
 
-def test_shbl_shb_ehb_ehbl(test_shm):
+def test_shbl_shb_ehb_ehbl(test_file):
     s = State()
 
-    hbl = a0.HeartbeatListener(test_shm,
+    hbl = a0.HeartbeatListener(test_file,
                                a0.HeartbeatListener.Options(min_freq=75),
                                s.ondetected, s.onmissed)
 
@@ -77,7 +77,7 @@ def test_shbl_shb_ehb_ehbl(test_shm):
     assert s.detected_cnt == 0
     assert s.missed_cnt == 0
 
-    hb = a0.Heartbeat(test_shm, a0.Heartbeat.Options(freq=100))
+    hb = a0.Heartbeat(test_file, a0.Heartbeat.Options(freq=100))
 
     time.sleep(1.0 / 50.0)
 
@@ -92,9 +92,9 @@ def test_shbl_shb_ehb_ehbl(test_shm):
     assert s.missed_cnt == 1
 
 
-def test_ignore_old(test_shm):
-    hb = a0.Heartbeat(test_shm, a0.Heartbeat.Options(freq=100))
-    a0.Subscriber.read_one(test_shm, a0.INIT_MOST_RECENT)
+def test_ignore_old(test_file):
+    hb = a0.Heartbeat(test_file, a0.Heartbeat.Options(freq=100))
+    a0.Subscriber.read_one(test_file, a0.INIT_MOST_RECENT)
     del hb
 
     time.sleep(1.0 / 50.0)
@@ -103,7 +103,7 @@ def test_ignore_old(test_shm):
 
     s = State()
 
-    hbl = a0.HeartbeatListener(test_shm,
+    hbl = a0.HeartbeatListener(test_file,
                                a0.HeartbeatListener.Options(min_freq=75),
                                s.ondetected, s.onmissed)
 
@@ -112,7 +112,7 @@ def test_ignore_old(test_shm):
     assert s.detected_cnt == 0
     assert s.missed_cnt == 0
 
-    hb = a0.Heartbeat(test_shm, a0.Heartbeat.Options(freq=100))
+    hb = a0.Heartbeat(test_file, a0.Heartbeat.Options(freq=100))
 
     time.sleep(1.0 / 50.0)
 
@@ -120,8 +120,8 @@ def test_ignore_old(test_shm):
     assert s.missed_cnt == 0
 
 
-def test_async_close(test_shm):
-    hb = a0.Heartbeat(test_shm, a0.Heartbeat.Options(freq=100))
+def test_async_close(test_file):
+    hb = a0.Heartbeat(test_file, a0.Heartbeat.Options(freq=100))
 
     class NS:
         pass
@@ -139,7 +139,7 @@ def test_async_close(test_shm):
 
         ns.hbl.async_close(trigger_stop)
 
-    ns.hbl = a0.HeartbeatListener(test_shm,
+    ns.hbl = a0.HeartbeatListener(test_file,
                                   a0.HeartbeatListener.Options(min_freq=75),
                                   ondetected, None)
 

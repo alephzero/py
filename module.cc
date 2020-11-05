@@ -19,18 +19,12 @@ using nogil_holder = std::unique_ptr<T, NoGilDeleter<T>>;
 
 PYBIND11_MODULE(alephzero_bindings, m) {
   py::class_<a0::File> pyfile(m, "File");
-  py::class_<a0::Shm> pyshm(m, "Shm");
-  py::class_<a0::Disk> pydisk(m, "Disk");
 
   py::class_<a0::Arena>(m, "Arena")
       .def(py::init<a0::File>())
-      .def(py::init<a0::Shm>())
-      .def(py::init<a0::Disk>())
       .def_property_readonly("size", &a0::Arena::size);
 
   py::implicitly_convertible<a0::File, a0::Arena>();
-  py::implicitly_convertible<a0::Shm, a0::Arena>();
-  py::implicitly_convertible<a0::Disk, a0::Arena>();
 
   py::class_<a0::File::Options> pyfileopts(pyfile, "Options");
 
@@ -56,38 +50,6 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def_property_readonly("id", &a0::File::fd)
       .def_static("remove", &a0::File::remove)
       .def_static("remove_all", &a0::File::remove_all);
-
-  py::class_<a0::Shm::Options>(pyshm, "Options")
-      .def(py::init<>())
-      .def(py::init([](off_t size) {
-             return a0::Shm::Options{size};
-           }),
-           py::arg("size"))
-      .def_readwrite("size", &a0::Shm::Options::size)
-      .def_readonly_static("DEFAULT", &a0::Shm::Options::DEFAULT);
-
-  pyshm
-      .def(py::init<std::string_view>())
-      .def(py::init<std::string_view, const a0::Shm::Options&>())
-      .def_property_readonly("size", &a0::Shm::size)
-      .def_property_readonly("path", &a0::Shm::path)
-      .def_static("unlink", &a0::Shm::unlink);
-
-  py::class_<a0::Disk::Options>(pydisk, "Options")
-      .def(py::init<>())
-      .def(py::init([](off_t size) {
-             return a0::Disk::Options{size};
-           }),
-           py::arg("size"))
-      .def_readwrite("size", &a0::Disk::Options::size)
-      .def_readonly_static("DEFAULT", &a0::Disk::Options::DEFAULT);
-
-  pydisk
-      .def(py::init<std::string_view>())
-      .def(py::init<std::string_view, const a0::Disk::Options&>())
-      .def_property_readonly("size", &a0::Disk::size)
-      .def_property_readonly("path", &a0::Disk::path)
-      .def_static("unlink", &a0::Disk::unlink);
 
   py::class_<a0::PacketView>(m, "PacketView")
       .def(py::init<const a0::Packet&>())
