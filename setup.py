@@ -1,9 +1,9 @@
 from distutils.core import setup, Extension
 import glob
-import subprocess
+# import subprocess
 
-subprocess.check_call(['git', 'submodule', 'init'], cwd='./alephzero')
-subprocess.check_call(['git', 'submodule', 'update'], cwd='./alephzero')
+# subprocess.check_call(['git', 'submodule', 'init'], cwd='./alephzero')
+# subprocess.check_call(['git', 'submodule', 'update'], cwd='./alephzero')
 module = Extension('alephzero_bindings',
                    sources=['module.cc'] + glob.glob('./alephzero/src/*.c*'),
                    include_dirs = ['./alephzero/include/'],
@@ -18,5 +18,6 @@ setup(name='alephzero',
       url='https://github.com/alephzero/py',
       long_description='''TODO: long description''',
       ext_modules=[module],
-      py_modules=['a0'],
-      install_requires=["pybind11>=v2.5.0"])
+      py_modules=['a0'])
+
+#install_requires=["pybind11>=v2.5.0"]
