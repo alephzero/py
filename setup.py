@@ -3,8 +3,6 @@ from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension
 
 
-# subprocess.check_call(['git', 'submodule', 'init'], cwd='./alephzero')
-# subprocess.check_call(['git', 'submodule', 'update'], cwd='./alephzero')
 module = Pybind11Extension(
       'alephzero_bindings',
       sources=['module.cc'] + glob.glob('./alephzero/src/*.c*'),
