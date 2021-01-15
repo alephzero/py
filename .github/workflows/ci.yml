@@ -17,18 +17,14 @@ jobs:
 
     steps:
     - name: install apt deps
-      run: apt update && apt install --no-install-recommends -y curl g++ git make pkg-config python3-dev python3-pip
+      run: apt update && apt install --no-install-recommends -y curl g++ git python3-dev python3-pip
     - name: install pip deps
       run: python3 -m pip install -U pip wheel setuptools pytest pytest-cov
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: install pip requirements
-      run: python3 -m pip install -r requirements.txt
-    - name: install alephzero core
-      run: cd ./alephzero/ && make install -j && cd ..
     - name: install alephzero python
-      run: CFLAGS="-O0 -fprofile-arcs -ftest-coverage --coverage" python3 setup.py install
+      run: python3 -m pip install .
     - name: run tests
       run: python3 -m pytest --cov=a0 tests/
     # - name: generate coverage

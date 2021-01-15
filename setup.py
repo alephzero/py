@@ -2,13 +2,11 @@ import glob
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension
 
-
-module = Pybind11Extension(
-      'alephzero_bindings',
-      sources=['module.cc'] + glob.glob('./alephzero/src/*.c*'),
-      include_dirs = ['./alephzero/include/'],
-      extra_compile_args = ['-std=c++17', '-O3'])
-
+sources = ['module.cc'] + glob.glob('./alephzero/src/*.c*')
+module = Pybind11Extension('alephzero_bindings',
+                           sources=sources,
+                           include_dirs=['./alephzero/include/'],
+                           extra_compile_args=['-std=c++17', '-O3'])
 
 setup(name='alephzero',
       version='0.2.0',
