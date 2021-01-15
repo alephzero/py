@@ -1,46 +1,14 @@
 from distutils.core import setup, Extension
-import pybind11
+import glob
 import subprocess
 
-
-def pkgconfig(*packages, **kwargs):
-    config = kwargs.setdefault('config', {})
-    optional_args = kwargs.setdefault('optional', '')
-
-    flag_map = {
-        'include_dirs': ['--cflags-only-I', 2],
-        'library_dirs': ['--libs-only-L', 2],
-        'libraries': ['--libs-only-l', 2],
-        'extra_compile_args': ['--cflags-only-other', 0],
-        'extra_link_args': ['--libs-only-other', 0],
-    }
-    for package in packages:
-        for distutils_key, (pkg_option, n) in flag_map.items():
-            items = subprocess.check_output(
-                ['pkg-config', optional_args, pkg_option,
-                 package]).decode('utf8').split()
-            config.setdefault(distutils_key, []).extend([i[n:] for i in items])
-    return config
-
-
-def merge_flags(*flags_groups):
-    all_flags = {}
-    for flags_group in flags_groups:
-        for key, vals in flags_group.items():
-            all_flags.setdefault(key, []).extend(vals)
-    return all_flags
-
-
+subprocess.check_call(['git', 'submodule', 'init'], cwd='./alephzero')
+subprocess.check_call(['git', 'submodule', 'update'], cwd='./alephzero')
 module = Extension('alephzero_bindings',
-                   sources=['module.cc'],
-                   **merge_flags(
-                       pkgconfig('alephzero'), {
-                           'include_dirs': [
-                               pybind11.get_include(True),
-                               pybind11.get_include(False),
-                           ],
-                           'extra_compile_args': ['-std=c++17'],
-                       }))
+                   sources=['module.cc'] + glob.glob('./alephzero/src/*.c*'),
+                   include_dirs = ['./alephzero/include/'],
+                   extra_compile_args = ['-std=c++17', '-O3'])
+
 
 setup(name='alephzero',
       version='0.2.0',
@@ -50,4 +18,5 @@ setup(name='alephzero',
       url='https://github.com/alephzero/py',
       long_description='''TODO: long description''',
       ext_modules=[module],
-      py_modules=['a0'])
+      py_modules=['a0'],
+      install_requires=["pybind11>=v2.5.0"])
