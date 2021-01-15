@@ -18,6 +18,5 @@ setup(name='alephzero',
       url='https://github.com/alephzero/py',
       long_description='''TODO: long description''',
       ext_modules=[module],
-      py_modules=['a0'])
-
-#install_requires=["pybind11>=v2.5.0"]
+      py_modules=['a0'],
+      install_requires=["pybind11>=v2.5.0"])
