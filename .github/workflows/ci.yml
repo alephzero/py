@@ -42,6 +42,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: 'true'
     - name: install apt deps
       run: apt update && apt install --no-install-recommends -y python3-pip
     - name: install pip deps
