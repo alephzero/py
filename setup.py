@@ -9,7 +9,7 @@ module = Pybind11Extension('alephzero_bindings',
                            extra_compile_args=['-std=c++17', '-O3'])
 
 setup(name='alephzero',
-      version='0.2.0',
+      version='0.2.1',
       description='TODO: description',
       author='Leonid Shamis',
       author_email='leonid.shamis@gmail.com',
