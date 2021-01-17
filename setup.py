@@ -3,7 +3,7 @@ from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension
 
 module = Pybind11Extension('alephzero_bindings',
-                           sources=sources + glob.glob('./alephzero/src/*.c*'),
+                           sources=['module.cc'] + glob.glob('./alephzero/src/*.c*'),
                            include_dirs=['./alephzero/include/'],
                            extra_compile_args=['-std=c++17', '-O3'])
 
