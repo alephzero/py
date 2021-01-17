@@ -50,3 +50,41 @@ jobs:
       run: python3 -m yapf -d -r -e alephzero .
     - name: flake8
       run: python3 -m flake8
+
+
+  pip:
+    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+
+    runs-on: ubuntu-latest
+    container:
+      image: 'quay.io/pypa/manylinux2014_x86_64'
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: install apt deps
+      run: yum install -y gcc-c++.x86_64 python3-devel.x86_64
+
+    - name: install pip deps
+      run: python3 -m pip install -U auditwheel pybind11 setuptools wheel
+
+    - name: build package
+      run: python3 setup.py sdist bdist_wheel
+
+    - name: auditwheel ???
+      run: |
+        for whl in dist/*-linux_x86_64.whl; do
+          auditwheel repair "$whl" -w dist/
+        done
+        rm dist/*-linux_x86_64.whl
+
+    - name: Publish distribution 📦 to Test PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository_url: https://test.pypi.org/legacy/
+
+    - name: Publish distribution 📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}

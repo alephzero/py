@@ -7,7 +7,6 @@ See https://github.com/alephzero/playground for examples.
 
 ## Install Instructions
 
-Then:
 ```sh
 pip install git+https://github.com/alephzero/py.git
 ```

@@ -172,7 +172,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def_static("read_one",
                   py::overload_cast<a0::Arena, a0_subscriber_init_t, int>(
                       &a0::Subscriber::read_one),
-                  py::arg("shm"),
+                  py::arg("arena"),
                   py::arg("seek"),
                   py::arg("flags") = 0)
       .def_static("read_one",
