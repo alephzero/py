@@ -42,8 +42,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: 'true'
     - name: install apt deps
       run: apt update && apt install --no-install-recommends -y python3-pip
     - name: install pip deps
@@ -63,6 +61,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: 'true'
 
     - name: install apt deps
       run: yum install -y gcc-c++.x86_64 python3-devel.x86_64
