@@ -142,6 +142,15 @@ PYBIND11_MODULE(alephzero_bindings, m) {
                              std::string_view>(&a0::Publisher::pub))
       .def("pub", py::overload_cast<std::string_view>(&a0::Publisher::pub));
 
+  py::class_<a0::PublisherRaw>(m, "PublisherRaw")
+      .def(py::init<a0::Arena>())
+      .def(py::init<std::string_view>())
+      .def("pub", py::overload_cast<const a0::PacketView&>(&a0::PublisherRaw::pub))
+      .def("pub",
+           py::overload_cast<std::vector<std::pair<std::string, std::string>>,
+                             std::string_view>(&a0::PublisherRaw::pub))
+      .def("pub", py::overload_cast<std::string_view>(&a0::PublisherRaw::pub));
+
   py::enum_<a0_subscriber_init_t>(m, "SubscriberInit")
       .value("INIT_OLDEST", A0_INIT_OLDEST)
       .value("INIT_MOST_RECENT", A0_INIT_MOST_RECENT)
