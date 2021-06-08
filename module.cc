@@ -47,7 +47,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init<std::string_view, a0::File::Options>())
       .def_property_readonly("size", &a0::File::size)
       .def_property_readonly("path", &a0::File::path)
-      .def_property_readonly("id", &a0::File::fd)
+      .def_property_readonly("fd", &a0::File::fd)
       .def_static("remove", &a0::File::remove)
       .def_static("remove_all", &a0::File::remove_all);
 
