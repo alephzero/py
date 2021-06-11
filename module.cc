@@ -17,6 +17,10 @@ struct NoGilDeleter {
 template <typename T>
 using nogil_holder = std::unique_ptr<T, NoGilDeleter<T>>;
 
+a0::File::Options default_file_options() {
+    return a0::File::Options::DEFAULT;
+}
+
 PYBIND11_MODULE(alephzero_bindings, m) {
   py::class_<a0::File> pyfile(m, "File");
 
@@ -40,7 +44,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init<>())
       .def_readwrite("create_options", &a0::File::Options::create_options)
       .def_readwrite("open_options", &a0::File::Options::open_options)
-      .def_readonly_static("DEFAULT", &a0::File::Options::DEFAULT);
+      .def("DEFAULT", &default_file_options);
 
   pyfile
       .def(py::init<std::string_view>())
