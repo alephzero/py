@@ -40,7 +40,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init<>())
       .def_readwrite("create_options", &a0::File::Options::create_options)
       .def_readwrite("open_options", &a0::File::Options::open_options)
-      .def_readonly_static("DEFAULT", &a0::File::Options::DEFAULT);
+      .def_static("DEFAULT", []() { return a0::File::Options::DEFAULT; });
 
   pyfile
       .def(py::init<std::string_view>())
@@ -272,7 +272,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
            }),
            py::arg("freq"))
       .def_readwrite("freq", &a0::Heartbeat::Options::freq)
-      .def_readonly_static("DEFAULT", &a0::Heartbeat::Options::DEFAULT);
+      .def_static("DEFAULT", []() { return a0::Heartbeat::Options::DEFAULT; });
 
   pyheartbeat
       .def(py::init<a0::Arena, a0::Heartbeat::Options>(), py::arg("shm"), py::arg("options"))
@@ -290,7 +290,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
            }),
            py::arg("min_freq"))
       .def_readwrite("min_freq", &a0::HeartbeatListener::Options::min_freq)
-      .def_readonly_static("DEFAULT", &a0::HeartbeatListener::Options::DEFAULT);
+      .def_static("DEFAULT", []() { return a0::HeartbeatListener::Options::DEFAULT; });
 
   pyheartbeatlistener
       .def(py::init<a0::Arena, a0::HeartbeatListener::Options, std::function<void()>, std::function<void()>>(),
