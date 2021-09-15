@@ -7,11 +7,6 @@ subprocess.run(
     ["make", "lib/libalephzero.a", "-j"],
     cwd="./alephzero",
     check=True,
-    env=dict(
-        os.environ,
-        A0_C_CONFIG_USE_YYJSON="0",
-        A0_CXX_CONFIG_USE_NLOHMANN="0",
-    ),
 )
 
 module = Pybind11Extension(
