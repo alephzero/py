@@ -9,6 +9,7 @@ def test_prpc():
     assert not os.path.exists("/dev/shm/alephzero/foo.prpc.a0")
 
     cv = threading.Condition()
+
     class State:
         connects = []
         replies = []

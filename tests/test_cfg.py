@@ -6,7 +6,15 @@ import pytest
 @pytest.fixture()
 def cfg():
     cfg = a0.Cfg("topic")
-    cfg.write(json.dumps({"foo": {"a": "aaa", "b": "bbb"}, "bar": 3, "bat": [1, 2, 3]}))
+    cfg.write(
+        json.dumps({
+            "foo": {
+                "a": "aaa",
+                "b": "bbb",
+            },
+            "bar": 3,
+            "bat": [1, 2, 3],
+        }))
     yield cfg
 
 
@@ -16,7 +24,15 @@ def test_cfg_int(cfg):
     assert bar == 3
     assert str(bar) == "3"
 
-    cfg.write(json.dumps({"bar": 4, "foo": {"a": "abc", "b": "bcd"}, "bat": [1, 2, 3]}))
+    cfg.write(
+        json.dumps({
+            "bar": 4,
+            "foo": {
+                "a": "abc",
+                "b": "bcd",
+            },
+            "bat": [1, 2, 3],
+        }))
 
     assert bar == 3
 
@@ -30,7 +46,15 @@ def test_cfg_str(cfg):
 
     assert a == "aaa"
 
-    cfg.write(json.dumps({"bar": 4, "foo": {"a": "abc", "b": "bcd"}, "bat": [1, 2, 3]}))
+    cfg.write(
+        json.dumps({
+            "bar": 4,
+            "foo": {
+                "a": "abc",
+                "b": "bcd",
+            },
+            "bat": [1, 2, 3],
+        }))
 
     assert a == "aaa"
 
@@ -44,7 +68,15 @@ def test_cfg_dict(cfg):
 
     assert foo == {"a": "aaa", "b": "bbb"}
 
-    cfg.write(json.dumps({"bar": 4, "foo": {"a": "abc", "b": "bcd"}, "bat": [1, 2, 3]}))
+    cfg.write(
+        json.dumps({
+            "bar": 4,
+            "foo": {
+                "a": "abc",
+                "b": "bcd",
+            },
+            "bat": [1, 2, 3],
+        }))
 
     assert foo == {"a": "aaa", "b": "bbb"}
 
@@ -62,7 +94,9 @@ def test_cfg_list(cfg):
 
 
 def test_cfg_class(cfg):
+
     class Foo:
+
         def __init__(self, a, b):
             self.a = a
             self.b = b
@@ -78,9 +112,8 @@ def test_cfg_class(cfg):
 
     foo = a0.cfg("topic", "/foo", Foo)
 
-    assert (
-        str(type(foo)) == """<class 'a0.cfg(topic='topic', jptr='/foo', type_=Foo)'>"""
-    )
+    assert (str(type(foo)) ==
+            """<class 'a0.cfg(topic='topic', jptr='/foo', type_=Foo)'>""")
 
     assert foo.a == "aaa"
     assert foo.b == "bbb"
@@ -88,7 +121,15 @@ def test_cfg_class(cfg):
     assert len(foo) == 6  # type: ignore "__len__" is not present
     assert foo.bar() == 5
 
-    cfg.write(json.dumps({"bar": 4, "foo": {"a": "abc", "b": "bcd"}, "bat": [1, 2, 3]}))
+    cfg.write(
+        json.dumps({
+            "bar": 4,
+            "foo": {
+                "a": "abc",
+                "b": "bcd",
+            },
+            "bat": [1, 2, 3],
+        }))
 
     assert foo.a == "aaa"
     assert foo.b == "bbb"

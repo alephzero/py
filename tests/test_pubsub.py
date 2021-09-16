@@ -13,6 +13,7 @@ def test_pubsub():
     assert os.path.exists("/dev/shm/alephzero/foo.pubsub.a0")
 
     cv = threading.Condition()
+
     class State:
         payloads = []
 
@@ -28,14 +29,27 @@ def test_pubsub():
     assert ss.has_next()
     pkt = ss.next()
     assert pkt.payload == b"hello"
-    assert sorted(k for k, _ in pkt.headers) == ["a0_time_mono", "a0_time_wall", "a0_transport_seq", "a0_writer_id", "a0_writer_seq"]
+    assert sorted(k for k, _ in pkt.headers) == [
+        "a0_time_mono",
+        "a0_time_wall",
+        "a0_transport_seq",
+        "a0_writer_id",
+        "a0_writer_seq",
+    ]
     assert not ss.has_next()
 
     p.pub(a0.Packet([("key", "val")], "world"))
 
     pkt = ss.next()
     assert pkt.payload == b"world"
-    assert sorted(k for k, _ in pkt.headers) == ["a0_time_mono", "a0_time_wall", "a0_transport_seq", "a0_writer_id", "a0_writer_seq", "key"]
+    assert sorted(k for k, _ in pkt.headers) == [
+        "a0_time_mono",
+        "a0_time_wall",
+        "a0_transport_seq",
+        "a0_writer_id",
+        "a0_writer_seq",
+        "key",
+    ]
 
     with cv:
         cv.wait_for(lambda: len(State.payloads) == 2)

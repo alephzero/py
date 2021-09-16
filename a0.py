@@ -52,6 +52,7 @@ class cfg:
 
     def __new__(cls, topic, jptr=None, type_=None):
         # fmt: off
+        # yapf: disable
         special_methods = [
             "__abs__", "__add__", "__aenter__", "__aexit__", "__aiter__", "__and__", "__anext__", "__await__",
             "__bytes__", "__call__", "__ceil__", "__complex__", "__contains__", "__delattr__",
@@ -66,13 +67,14 @@ class cfg:
             "__rsub__", "__rtruediv__", "__rxor__", "__set__", "__setattr__", "__setitem__", "__str__",
             "__sub__", "__truediv__", "__trunc__", "__xor__",
         ]
+        # yapf: enable
         # fmt: on
 
         def make_method(name):
+
             def method(self, *args, **kw):
-                return getattr(object.__getattribute__(self, "__get")(), name)(
-                    *args, **kw
-                )
+                return getattr(object.__getattribute__(self, "__get")(),
+                               name)(*args, **kw)
 
             return method
 
@@ -82,9 +84,8 @@ class cfg:
             full_cls_args.append(f"jptr={repr(jptr)}")
         if type_:
             full_cls_args.append(f"type_={type_.__name__}")
-        full_cls = type(
-            f"{cls.__name__}({', '.join(full_cls_args)})", (cls,), namespace
-        )
+        full_cls = type(f"{cls.__name__}({', '.join(full_cls_args)})", (cls,),
+                        namespace)
 
         self = object.__new__(full_cls)
         full_cls.__init__(self, topic, jptr, type_)
@@ -112,6 +113,7 @@ def update_configs():
 
 
 class aio_sub:
+
     def __init__(self, file, init_, iter_, loop=None):
         ns = types.SimpleNamespace()
         ns.loop = loop or asyncio.get_event_loop()
@@ -158,6 +160,7 @@ async def aio_sub_one(file, init_, loop=None):
 
 
 class AioRpcClient:
+
     def __init__(self, file, loop=None):
         self._loop = loop or asyncio.get_event_loop()
         self._client = RpcClient(file)

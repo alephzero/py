@@ -12,6 +12,7 @@ def test_logger():
     assert os.path.exists("/dev/shm/alephzero/foo.log.a0")
 
     cv = threading.Condition()
+
     class State:
         msgs = []
 
@@ -31,4 +32,9 @@ def test_logger():
 
     with cv:
         cv.wait_for(lambda: len(State.msgs) == 4)
-    assert State.msgs == [['CRIT', b'crit'], ['ERR', b'err'], ['WARN', b'warn'], ['INFO', b'info']]
+    assert State.msgs == [
+        ['CRIT', b'crit'],
+        ['ERR', b'err'],
+        ['WARN', b'warn'],
+        ['INFO', b'info'],
+    ]

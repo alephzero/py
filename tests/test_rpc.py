@@ -9,6 +9,7 @@ def test_rpc():
     assert not os.path.exists("/dev/shm/alephzero/foo.rpc.a0")
 
     cv = threading.Condition()
+
     class State:
         requests = []
         cancels = []
@@ -42,4 +43,5 @@ def test_rpc():
     client.cancel(pkt.id)
 
     with cv:
-        cv.wait_for(lambda: len(State.requests) == 3 and len(State.cancels) == 1 and len(State.replies) == 2)
+        cv.wait_for(lambda: len(State.requests) == 3 and len(State.cancels) == 1
+                    and len(State.replies) == 2)
