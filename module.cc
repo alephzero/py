@@ -210,76 +210,68 @@ PYBIND11_MODULE(alephzero_bindings, m) {
                   py::arg("init"),
                   py::arg("flags") = 0);
 
-//   m.def("read_config", &a0::read_config, py::arg("flags") = 0);
+  py::class_<a0::RpcTopic>(m, "RpcTopic")
+      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
 
-//   py::class_<a0::RpcRequest>(m, "RpcRequest")
-//       .def_property_readonly("pkt", &a0::RpcRequest::pkt)
-//       .def("reply", py::overload_cast<const a0::Packet&>(&a0::RpcRequest::reply))
-//       .def("reply",
-//            py::overload_cast<std::vector<std::pair<std::string, std::string>>,
-//                              a0::string_view>(&a0::RpcRequest::reply))
-//       .def("reply", py::overload_cast<a0::string_view>(&a0::RpcRequest::reply));
+  py::implicitly_convertible<std::string, a0::RpcTopic>();
 
-//   py::class_<a0::RpcServer, nogil_holder<a0::RpcServer>>(m, "RpcServer")
-//       .def(py::init<a0::Arena,
-//                     std::function<void(a0::RpcRequest)>,
-//                     std::function<void(a0::string_view)>>())
-//       .def(py::init<a0::string_view,
-//                     std::function<void(a0::RpcRequest)>,
-//                     std::function<void(a0::string_view)>>())
-//       .def("async_close", &a0::RpcServer::async_close);
+  py::class_<a0::RpcRequest>(m, "RpcRequest")
+      .def_property_readonly("pkt", &a0::RpcRequest::pkt)
+      .def("reply", py::overload_cast<a0::Packet>(&a0::RpcRequest::reply));
 
-//   py::class_<a0::RpcClient, nogil_holder<a0::RpcClient>>(m, "RpcClient")
-//       .def(py::init<a0::Arena>())
-//       .def(py::init<a0::string_view>())
-//       .def("async_close", &a0::RpcClient::async_close)
-//       .def("send",
-//            py::overload_cast<const a0::Packet&, std::function<void(const a0::Packet&)>>(
-//                &a0::RpcClient::send))
-//       .def("send",
-//            py::overload_cast<std::vector<std::pair<std::string, std::string>>,
-//                              a0::string_view,
-//                              std::function<void(const a0::Packet&)>>(&a0::RpcClient::send))
-//       .def("send",
-//            py::overload_cast<a0::string_view, std::function<void(const a0::Packet&)>>(
-//                &a0::RpcClient::send))
-//       .def("cancel", &a0::RpcClient::cancel);
+  py::class_<a0::RpcServer, nogil_holder<a0::RpcServer>>(m, "RpcServer")
+      .def(py::init<a0::RpcTopic,
+                    std::function<void(a0::RpcRequest)>,
+                    std::function<void(a0::string_view)>>());
 
-//   py::class_<a0::PrpcConnection>(m, "PrpcConnection")
-//       .def_property_readonly("pkt", &a0::PrpcConnection::pkt)
-//       .def("send", py::overload_cast<const a0::Packet&, bool>(&a0::PrpcConnection::send))
-//       .def("send",
-//            py::overload_cast<std::vector<std::pair<std::string, std::string>>,
-//                              a0::string_view,
-//                              bool>(&a0::PrpcConnection::send))
-//       .def("send", py::overload_cast<a0::string_view, bool>(&a0::PrpcConnection::send));
+  py::class_<a0::RpcClient, nogil_holder<a0::RpcClient>>(m, "RpcClient")
+      .def(py::init<a0::RpcTopic>())
+      .def("send", py::overload_cast<a0::Packet, std::function<void(a0::Packet)>>(&a0::RpcClient::send))
+      .def("cancel", &a0::RpcClient::cancel);
 
-//   py::class_<a0::PrpcServer, nogil_holder<a0::PrpcServer>>(m, "PrpcServer")
-//       .def(py::init<a0::Arena,
-//                     std::function<void(a0::PrpcConnection)>,
-//                     std::function<void(a0::string_view)>>())
-//       .def(py::init<a0::string_view,
-//                     std::function<void(a0::PrpcConnection)>,
-//                     std::function<void(a0::string_view)>>())
-//       .def("async_close", &a0::PrpcServer::async_close);
+  py::class_<a0::PrpcTopic>(m, "PrpcTopic")
+      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
 
-//   py::class_<a0::PrpcClient, nogil_holder<a0::PrpcClient>>(m, "PrpcClient")
-//       .def(py::init<a0::Arena>())
-//       .def(py::init<a0::string_view>())
-//       .def("async_close", &a0::PrpcClient::async_close)
-//       .def("connect",
-//            py::overload_cast<const a0::Packet&,
-//                              std::function<void(const a0::Packet&, bool)>>(
-//                &a0::PrpcClient::connect))
-//       .def("connect",
-//            py::overload_cast<std::vector<std::pair<std::string, std::string>>,
-//                              a0::string_view,
-//                              std::function<void(const a0::Packet&, bool)>>(
-//                &a0::PrpcClient::connect))
-//       .def("connect",
-//            py::overload_cast<a0::string_view,
-//                              std::function<void(const a0::Packet&, bool)>>(
-//                &a0::PrpcClient::connect))
-//       .def("cancel", &a0::PrpcClient::cancel);
+  py::implicitly_convertible<std::string, a0::PrpcTopic>();
 
+  py::class_<a0::PrpcConnection>(m, "PrpcConnection")
+      .def_property_readonly("pkt", &a0::PrpcConnection::pkt)
+      .def("send", py::overload_cast<a0::Packet, bool>(&a0::PrpcConnection::send));
+
+  py::class_<a0::PrpcServer, nogil_holder<a0::PrpcServer>>(m, "PrpcServer")
+      .def(py::init<a0::PrpcTopic,
+                    std::function<void(a0::PrpcConnection)>,
+                    std::function<void(a0::string_view)>>());
+
+  py::class_<a0::PrpcClient, nogil_holder<a0::PrpcClient>>(m, "PrpcClient")
+      .def(py::init<a0::PrpcTopic>())
+      .def("connect", py::overload_cast<a0::Packet, std::function<void(a0::Packet, bool)>>(&a0::PrpcClient::connect))
+      .def("cancel", &a0::PrpcClient::cancel);
+
+  py::class_<a0::LogTopic>(m, "LogTopic")
+      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
+
+  py::implicitly_convertible<std::string, a0::LogTopic>();
+
+  py::enum_<a0::LogLevel>(m, "LogLevel")
+      .value("CRIT", a0::LogLevel::CRIT)
+      .value("ERR", a0::LogLevel::ERR)
+      .value("WARN", a0::LogLevel::WARN)
+      .value("INFO", a0::LogLevel::INFO)
+      .value("DBG", a0::LogLevel::DBG)
+      .value("MIN", a0::LogLevel::MIN)
+      .value("MAX", a0::LogLevel::MAX)
+      .export_values();
+
+  py::class_<a0::Logger, nogil_holder<a0::Logger>>(m, "Logger")
+      .def(py::init<a0::LogTopic>())
+      .def("log", py::overload_cast<a0::LogLevel, a0::Packet>(&a0::Logger::log))
+      .def("crit", py::overload_cast<a0::Packet>(&a0::Logger::crit))
+      .def("err", py::overload_cast<a0::Packet>(&a0::Logger::err))
+      .def("warn", py::overload_cast<a0::Packet>(&a0::Logger::warn))
+      .def("info", py::overload_cast<a0::Packet>(&a0::Logger::info))
+      .def("dbg", py::overload_cast<a0::Packet>(&a0::Logger::dbg));
+
+  py::class_<a0::LogListener, nogil_holder<a0::LogListener>>(m, "LogListener")
+      .def(py::init<a0::LogTopic, a0::LogLevel, std::function<void(a0::Packet)>>());
 }
