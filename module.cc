@@ -18,7 +18,7 @@ struct type_caster<a0::string_view> : string_caster<a0::string_view, true> {};
 } // namespace detail
 } // namespace pybind11
 
-#endif
+#endif  // (__cplusplus < 201703L)
 
 template <typename T>
 struct NoGilDeleter {
@@ -263,7 +263,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .value("MAX", a0::LogLevel::MAX)
       .export_values();
 
-  py::class_<a0::Logger, nogil_holder<a0::Logger>>(m, "Logger")
+  py::class_<a0::Logger>(m, "Logger")
       .def(py::init<a0::LogTopic>())
       .def("log", py::overload_cast<a0::LogLevel, a0::Packet>(&a0::Logger::log))
       .def("crit", py::overload_cast<a0::Packet>(&a0::Logger::crit))
@@ -274,4 +274,17 @@ PYBIND11_MODULE(alephzero_bindings, m) {
 
   py::class_<a0::LogListener, nogil_holder<a0::LogListener>>(m, "LogListener")
       .def(py::init<a0::LogTopic, a0::LogLevel, std::function<void(a0::Packet)>>());
+
+  py::class_<a0::CfgTopic>(m, "CfgTopic")
+      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
+
+  py::implicitly_convertible<std::string, a0::CfgTopic>();
+
+  py::class_<a0::Cfg>(m, "Cfg")
+      .def(py::init<a0::CfgTopic>())
+      .def("read", &a0::Cfg::read, py::arg("flags") = 0)
+      .def("write", py::overload_cast<a0::Packet>(&a0::Cfg::write));
+
+  py::class_<a0::CfgWatcher, nogil_holder<a0::CfgWatcher>>(m, "CfgWatcher")
+      .def(py::init<a0::CfgTopic, std::function<void(a0::Packet)>>());
 }

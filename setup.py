@@ -26,4 +26,7 @@ setup(
     long_description="""TODO: long description""",
     ext_modules=[module],
     py_modules=["a0"],
+    install_requires=[
+        'jsonpointer>=2.1',
+    ],
 )
