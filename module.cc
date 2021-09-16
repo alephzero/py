@@ -56,10 +56,10 @@ PYBIND11_MODULE(alephzero_bindings, m) {
 
   pyarena
       .def(py::init([](a0::File file) { return a0::Arena(file); }))
-      .def_property_readonly("buf", [](a0::Arena& self) {
-        return py::memoryview::from_memory(self.buf().data(), self.buf().size());
+      .def_property_readonly("buf", [](a0::Arena* self) {
+        return py::memoryview::from_memory(self->buf().data(), self->buf().size());
       })
-      .def_property_readonly("mode", [](a0::Arena& self) { return self.mode(); });
+      .def_property_readonly("mode", [](a0::Arena* self) { return self->mode(); });
 
   py::class_<a0::File::Options> pyfileopts(pyfile, "Options");
 
@@ -84,8 +84,8 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def_property_readonly("size", &a0::File::size)
       .def_property_readonly("path", &a0::File::path)
       .def_property_readonly("fd", &a0::File::fd)
-      .def_property_readonly("stat", [](const a0::File& self) {
-          auto stat = self.stat();
+      .def_property_readonly("stat", [](const a0::File* self) {
+          auto stat = self->stat();
           auto os = py::module::import("os");
           return os.attr("stat_result")(py::make_tuple(
               stat.st_mode,
@@ -141,6 +141,9 @@ PYBIND11_MODULE(alephzero_bindings, m) {
         return py::memoryview::from_memory(self->payload().data(), self->payload().size());
       });
 
+  py::implicitly_convertible<py::bytes, a0::Packet>();
+  py::implicitly_convertible<py::str, a0::Packet>();
+
   py::class_<a0::Middleware>(m, "Middleware");
   m.def("add_time_mono_header", &a0::add_time_mono_header);
   m.def("add_time_wall_header", &a0::add_time_wall_header);
@@ -152,85 +155,60 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   py::class_<a0::Writer>(m, "Writer")
       .def(py::init<a0::Arena>())
       .def("write", py::overload_cast<a0::Packet>(&a0::Writer::write))
-      .def("write", py::overload_cast<a0::string_view>(&a0::Writer::write))
       .def("push", &a0::Writer::push)
       .def("wrap", &a0::Writer::wrap);
 
-  py::enum_<a0_reader_init_t>(m, "ReaderInit")
+  py::enum_<a0::ReaderInit>(m, "ReaderInit")
       .value("INIT_OLDEST", A0_INIT_OLDEST)
       .value("INIT_MOST_RECENT", A0_INIT_MOST_RECENT)
       .value("INIT_AWAIT_NEW", A0_INIT_AWAIT_NEW)
       .export_values();
 
-  py::enum_<a0_reader_iter_t>(m, "ReaderIter")
+  py::enum_<a0::ReaderIter>(m, "ReaderIter")
       .value("ITER_NEXT", A0_ITER_NEXT)
       .value("ITER_NEWEST", A0_ITER_NEWEST)
       .export_values();
 
   py::class_<a0::ReaderSync>(m, "ReaderSync")
-      .def(py::init<a0::Arena, a0_reader_init_t, a0_reader_iter_t>())
+      .def(py::init<a0::Arena, a0::ReaderInit, a0::ReaderIter>())
       .def("has_next", &a0::ReaderSync::has_next)
       .def("next", &a0::ReaderSync::next);
 
   py::class_<a0::Reader, nogil_holder<a0::Reader>>(m, "Reader")
       .def(py::init<a0::Arena,
-                    a0_reader_init_t,
-                    a0_reader_iter_t,
+                    a0::ReaderInit,
+                    a0::ReaderIter,
                     std::function<void(a0::Packet)>>())
       .def_static("read_one",
-                  py::overload_cast<a0::Arena, a0_reader_init_t, int>(&a0::Reader::read_one),
+                  py::overload_cast<a0::Arena, a0::ReaderInit, int>(&a0::Reader::read_one),
                   py::arg("arena"),
                   py::arg("init"),
                   py::arg("flags") = 0);
 
-//   py::class_<a0::Publisher>(m, "Publisher")
-//       .def(py::init<a0::Arena>())
-//       .def(py::init<a0::string_view>())
-//       .def("pub", py::overload_cast<const a0::Packet&>(&a0::Publisher::pub))
-//       .def("pub",
-//            py::overload_cast<std::vector<std::pair<std::string, std::string>>,
-//                              a0::string_view>(&a0::Publisher::pub))
-//       .def("pub", py::overload_cast<a0::string_view>(&a0::Publisher::pub));
+  py::class_<a0::PubSubTopic>(m, "PubSubTopic")
+      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
 
-//   py::enum_<a0_subscriber_init_t>(m, "SubscriberInit")
-//       .value("INIT_OLDEST", A0_INIT_OLDEST)
-//       .value("INIT_MOST_RECENT", A0_INIT_MOST_RECENT)
-//       .value("INIT_AWAIT_NEW", A0_INIT_AWAIT_NEW)
-//       .export_values();
+  py::implicitly_convertible<std::string, a0::PubSubTopic>();
 
-//   py::enum_<a0_subscriber_iter_t>(m, "SubscriberIter")
-//       .value("ITER_NEXT", A0_ITER_NEXT)
-//       .value("ITER_NEWEST", A0_ITER_NEWEST)
-//       .export_values();
+  py::class_<a0::Publisher>(m, "Publisher")
+      .def(py::init<a0::PubSubTopic>())
+      .def("pub", py::overload_cast<a0::Packet>(&a0::Publisher::pub));
 
-//   py::class_<a0::SubscriberSync>(m, "SubscriberSync")
-//       .def(py::init<a0::Arena, a0_subscriber_init_t, a0_subscriber_iter_t>())
-//       .def(py::init<a0::string_view, a0_subscriber_init_t, a0_subscriber_iter_t>())
-//       .def("has_next", &a0::SubscriberSync::has_next)
-//       .def("next", &a0::SubscriberSync::next);
+  py::class_<a0::SubscriberSync>(m, "SubscriberSync")
+      .def(py::init<a0::PubSubTopic, a0::ReaderInit, a0::ReaderIter>())
+      .def("has_next", &a0::SubscriberSync::has_next)
+      .def("next", &a0::SubscriberSync::next);
 
-//   py::class_<a0::Subscriber, nogil_holder<a0::Subscriber>>(m, "Subscriber")
-//       .def(py::init<a0::Arena,
-//                     a0_subscriber_init_t,
-//                     a0_subscriber_iter_t,
-//                     std::function<void(a0::Packet)>>())
-//       .def(py::init<a0::string_view,
-//                     a0_subscriber_init_t,
-//                     a0_subscriber_iter_t,
-//                     std::function<void(a0::Packet)>>())
-//       .def("async_close", &a0::Subscriber::async_close)
-//       .def_static("read_one",
-//                   py::overload_cast<a0::Arena, a0_subscriber_init_t, int>(
-//                       &a0::Subscriber::read_one),
-//                   py::arg("arena"),
-//                   py::arg("seek"),
-//                   py::arg("flags") = 0)
-//       .def_static("read_one",
-//                   py::overload_cast<a0::string_view, a0_subscriber_init_t, int>(
-//                       &a0::Subscriber::read_one),
-//                   py::arg("topic"),
-//                   py::arg("seek"),
-//                   py::arg("flags") = 0);
+  py::class_<a0::Subscriber, nogil_holder<a0::Subscriber>>(m, "Subscriber")
+      .def(py::init<a0::PubSubTopic,
+                    a0::ReaderInit,
+                    a0::ReaderIter,
+                    std::function<void(a0::Packet)>>())
+      .def_static("read_one",
+                  py::overload_cast<a0::PubSubTopic, a0::ReaderInit, int>(&a0::Subscriber::read_one),
+                  py::arg("topic"),
+                  py::arg("init"),
+                  py::arg("flags") = 0);
 
 //   m.def("read_config", &a0::read_config, py::arg("flags") = 0);
 

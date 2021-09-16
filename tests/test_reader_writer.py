@@ -10,11 +10,12 @@ def test_reader_writer():
     rs = a0.ReaderSync(file, a0.INIT_OLDEST, a0.ITER_NEXT)
 
     cv = threading.Condition()
-    pkt_cnt = 0
+    class State:
+        payloads = []
+
     def callback(pkt):
         with cv:
-            nonlocal pkt_cnt
-            pkt_cnt += 1
+            State.payloads.append(pkt.payload)
             cv.notify()
 
     r = a0.Reader(file, a0.INIT_OLDEST, a0.ITER_NEXT, callback)
@@ -41,4 +42,5 @@ def test_reader_writer():
     assert sorted(pkt.headers) == [("a0_transport_seq", "2"), ("a0_writer_seq", "0")]
 
     with cv:
-        cv.wait_for(lambda: pkt_cnt >= 3)
+        cv.wait_for(lambda: len(State.payloads) == 3)
+    assert State.payloads == [b"hello", b"aaa", b"bbb"]
