@@ -291,4 +291,14 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   auto env = m.def_submodule("env");
   env.def("root", &a0::env::root);
   env.def("topic", &a0::env::topic);
+
+  py::class_<a0::TimeMono>(m, "TimeMono")
+      .def_static("now", &a0::TimeMono::now)
+      .def_static("parse", &a0::TimeMono::parse)
+      .def("__str__", &a0::TimeMono::to_string);
+
+  py::class_<a0::TimeWall>(m, "TimeWall")
+      .def_static("now", &a0::TimeWall::now)
+      .def_static("parse", &a0::TimeWall::parse)
+      .def("__str__", &a0::TimeWall::to_string);
 }
