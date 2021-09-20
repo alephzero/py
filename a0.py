@@ -114,7 +114,7 @@ def update_configs():
 
 class aio_sub:
 
-    def __init__(self, file, init_, iter_, loop=None):
+    def __init__(self, topic, init_, iter_, loop=None):
         ns = types.SimpleNamespace()
         ns.loop = loop or asyncio.get_event_loop()
         ns.q = asyncio.Queue(1)
@@ -123,8 +123,7 @@ class aio_sub:
 
         # Note: To prevent cyclic dependencies, `callback` is NOT owned by
         # self.
-        def callback(pkt_view):
-            pkt = Packet(pkt_view)
+        def callback(pkt):
             with ns.cv:
                 if ns.closing:
                     return
@@ -136,7 +135,7 @@ class aio_sub:
                 ns.cv.wait()
 
         self._ns = ns
-        self._sub = Subscriber(file, init_, iter_, callback)
+        self._sub = Subscriber(topic, init_, iter_, callback)
 
     def __del__(self):
         with self._ns.cv:
@@ -154,23 +153,22 @@ class aio_sub:
         return pkt
 
 
-async def aio_sub_one(file, init_, loop=None):
-    async for pkt in aio_sub(file, init_, ITER_NEXT, loop):
+async def aio_sub_one(topic, init_, loop=None):
+    async for pkt in aio_sub(topic, init_, ITER_NEXT, loop):
         return pkt
 
 
 class AioRpcClient:
 
-    def __init__(self, file, loop=None):
+    def __init__(self, topic, loop=None):
         self._loop = loop or asyncio.get_event_loop()
-        self._client = RpcClient(file)
+        self._client = RpcClient(topic)
 
     async def send(self, pkt):
         ns = types.SimpleNamespace()
         ns.fut = asyncio.Future(loop=self._loop)
 
-        def callback(pkt_view):
-            pkt = Packet(pkt_view)
+        def callback(pkt):
 
             def onloop():
                 ns.fut.set_result(pkt)
