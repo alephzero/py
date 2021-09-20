@@ -288,6 +288,9 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   py::class_<a0::CfgWatcher, nogil_holder<a0::CfgWatcher>>(m, "CfgWatcher")
       .def(py::init<a0::CfgTopic, std::function<void(a0::Packet)>>());
 
+  py::class_<a0::Discovery, nogil_holder<a0::Discovery>>(m, "Discovery")
+      .def(py::init<const std::string&, std::function<void(const std::string&)>>());
+
   auto env = m.def_submodule("env");
   env.def("root", &a0::env::root);
   env.def("topic", &a0::env::topic);
