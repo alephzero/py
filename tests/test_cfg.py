@@ -140,3 +140,24 @@ def test_cfg_class(cfg):
     assert foo.a == "abc"
     assert foo.b == "bcd"
     assert str(foo) == "Foo(a=abc, b=bcd)"
+
+
+def test_cfg_mergepatch(cfg):
+    cfg = a0.Cfg("topic")
+    assert json.loads(cfg.read().payload) == {
+        "bar": 3,
+        "bat": [1, 2, 3],
+        "foo": {
+            "a": "aaa",
+            "b": "bbb"
+        },
+    }
+    cfg.mergepatch({"bar": 4})
+    assert json.loads(cfg.read().payload) == {
+        "bar": 4,
+        "bat": [1, 2, 3],
+        "foo": {
+            "a": "aaa",
+            "b": "bbb"
+        },
+    }

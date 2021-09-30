@@ -33,8 +33,8 @@ def test_logger():
     with cv:
         cv.wait_for(lambda: len(State.msgs) == 4)
     assert State.msgs == [
-        ['CRIT', b'crit'],
-        ['ERR', b'err'],
-        ['WARN', b'warn'],
-        ['INFO', b'info'],
+        ["CRIT", b"crit"],
+        ["ERR", b"err"],
+        ["WARN", b"warn"],
+        ["INFO", b"info"],
     ]

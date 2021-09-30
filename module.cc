@@ -283,7 +283,16 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   py::class_<a0::Cfg>(m, "Cfg")
       .def(py::init<a0::CfgTopic>())
       .def("read", &a0::Cfg::read, py::arg("flags") = 0)
-      .def("write", py::overload_cast<a0::Packet>(&a0::Cfg::write));
+      .def("write", py::overload_cast<a0::Packet>(&a0::Cfg::write))
+      .def("mergepatch", [](a0::Cfg* self, py::dict mergepatch_dict) {
+        auto mergepatch_str = py::cast<std::string>(py::module_::import("json").attr("dumps")(mergepatch_dict));
+        auto yydoc = yyjson_read(mergepatch_str.c_str(), mergepatch_str.size(), 0);
+        auto err = a0_cfg_mergepatch_yyjson(self->c.get(), *yydoc);
+        yyjson_doc_free(yydoc);
+        if (err) {
+          throw std::runtime_error(a0_strerror(err));
+        }
+      });
 
   py::class_<a0::CfgWatcher, nogil_holder<a0::CfgWatcher>>(m, "CfgWatcher")
       .def(py::init<a0::CfgTopic, std::function<void(a0::Packet)>>());

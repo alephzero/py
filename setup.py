@@ -1,10 +1,9 @@
 from setuptools import setup
 from pybind11.setup_helpers import Pybind11Extension
 import subprocess
-import os
 
 subprocess.run(
-    ["make", "lib/libalephzero.a", "-j"],
+    ["make", "lib/libalephzero.a", "A0_EXT_YYJSON=1"],
     cwd="./alephzero",
     check=True,
 )
@@ -13,7 +12,11 @@ module = Pybind11Extension(
     "alephzero_bindings",
     sources=["module.cc"],
     extra_objects=["./alephzero/lib/libalephzero.a"],
-    include_dirs=["./alephzero/include/"],
+    include_dirs=[
+        "./alephzero/include/",
+        "./alephzero/third_party/yyjson/src/",
+    ],
+    define_macros=[("A0_EXT_YYJSON", "1")],
 )
 
 setup(
@@ -27,6 +30,6 @@ setup(
     ext_modules=[module],
     py_modules=["a0"],
     install_requires=[
-        'jsonpointer>=2.1',
+        "jsonpointer>=2.1",
     ],
 )
