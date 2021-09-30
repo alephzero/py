@@ -3,7 +3,7 @@ from pybind11.setup_helpers import Pybind11Extension
 import subprocess
 
 subprocess.run(
-    ["make", "lib/libalephzero.a", "A0_EXT_YYJSON=1"],
+    ["make", "lib/libalephzero.a", "A0_EXT_YYJSON=1", "-j"],
     cwd="./alephzero",
     check=True,
 )
@@ -21,7 +21,7 @@ module = Pybind11Extension(
 
 setup(
     name="alephzero",
-    version="0.3.0",
+    version="0.3.2",
     description="TODO: description",
     author="Leonid Shamis",
     author_email="leonid.shamis@gmail.com",

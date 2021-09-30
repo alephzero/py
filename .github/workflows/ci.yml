@@ -59,23 +59,23 @@ jobs:
 
     runs-on: ubuntu-latest
     container:
-      image: 'quay.io/pypa/manylinux2014_x86_64'
+      image: 'quay.io/pypa/manylinux_2_24_x86_64'
 
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: 'true'
+        submodules: recursive
 
     - name: install apt deps
-      run: yum install -y gcc-c++.x86_64 python3-devel.x86_64
+      run: apt update && apt install -y python3-pip
 
     - name: install pip deps
-      run: python3 -m pip install -U auditwheel pybind11 setuptools wheel
+      run: python3 -m pip install -U build pybind11 setuptools twine virtualenv wheel
 
     - name: build package
-      run: python3 setup.py sdist bdist_wheel
+      run: python3 -m build
 
-    - name: auditwheel ???
+    - name: auditwheel
       run: |
         for whl in dist/*-linux_x86_64.whl; do
           auditwheel repair "$whl" -w dist/
