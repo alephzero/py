@@ -1,12 +1,11 @@
 import a0
-import os
 import threading
 
 
 def test_discovery():
     try:
         a0.File.remove_all("discovery_test")
-    except:
+    except Exception as _:
         pass
 
     a0.File("discovery_test/unused")

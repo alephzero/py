@@ -112,8 +112,8 @@ def test_cfg_class(cfg):
 
     foo = a0.cfg("topic", "/foo", Foo)
 
-    assert (str(type(foo)) ==
-            """<class 'a0.cfg(topic='topic', jptr='/foo', type_=Foo)'>""")
+    assert (str(type(foo))
+            == """<class 'a0.cfg(topic='topic', jptr='/foo', type_=Foo)'>""")
 
     assert foo.a == "aaa"
     assert foo.b == "bbb"
