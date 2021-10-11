@@ -1,3 +1,5 @@
 graft alephzero/include
 graft alephzero/include/a0
+graft alephzero/lib
 graft alephzero/src
+graft alephzero/third_party/yyjson/src
