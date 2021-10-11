@@ -9,3 +9,4 @@ ignore =
   F405,  # [module] may be undefined, or defined from star imports
   F841,  # local variable is assigned to but never used
   W503,  # line break after binary operator. Conflicts with superceding W504.
+  W504,  # conflicts with yapf.

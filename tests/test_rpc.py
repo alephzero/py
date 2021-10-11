@@ -43,6 +43,5 @@ def test_rpc():
     client.cancel(pkt.id)
 
     with cv:
-        cv.wait_for(lambda: (len(State.requests) == 3
-                             and len(State.cancels) == 1
-                             and len(State.replies) == 2))
+        cv.wait_for(lambda: (len(State.requests) == 3 and len(State.cancels) ==
+                             1 and len(State.replies) == 2))
