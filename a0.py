@@ -1,10 +1,12 @@
 from alephzero_bindings import *
 import asyncio
+import base64
 import json
 import jsonpointer
 import threading
 import types
 import weakref
+import websocket
 
 #################
 # Configuration #
@@ -179,3 +181,67 @@ class AioRpcClient:
         self._client.send(pkt, callback)
 
         return await ns.fut
+
+
+##########
+# Remote #
+##########
+
+
+class RemoteSubscriber:
+
+    def __init__(
+        self,
+        remote_host,
+        topic,
+        init_,
+        iter_,
+        callback,
+        remote_port=24880,
+        response_encoding="base64",
+        scheduler="IMMEDIATE",
+    ):
+        self._ws = websocket.create_connection(
+            f"ws://{remote_host}:{remote_port}/wsapi/sub")
+
+        self._ws.send(
+            json.dumps(
+                dict(
+                    topic=topic,
+                    init={
+                        INIT_AWAIT_NEW: "AWAIT_NEW",
+                        INIT_MOST_RECENT: "MOST_RECENT",
+                        INIT_OLDEST: "OLDEST",
+                    }[init_],
+                    iter={
+                        ITER_NEXT: "NEXT",
+                        ITER_NEWEST: "NEWEST",
+                    }[iter_],
+                    response_encoding=response_encoding,
+                    scheduler=scheduler,
+                )))
+
+        def read_loop(ws):
+            while True:
+                try:
+                    msg = ws.recv()
+                except websocket.WebSocketConnectionClosedException:
+                    # Remote API died.
+                    return
+
+                if not msg:
+                    # RemoteSubscriber went out of scope.
+                    return
+
+                jmsg = json.loads(msg)
+                if response_encoding == "base64":
+                    jmsg["payload"] = base64.b64decode(jmsg["payload"])
+
+                callback(Packet(jmsg["headers"], jmsg["payload"]))
+
+        self._thread = threading.Thread(target=read_loop, args=(self._ws,))
+        self._thread.start()
+
+    def __del__(self):
+        self._ws.close()
+        self._thread.join()
