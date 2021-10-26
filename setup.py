@@ -31,5 +31,6 @@ setup(
     py_modules=["a0"],
     install_requires=[
         "jsonpointer>=2.1",
+        "websocket-client>=1.2.1",
     ],
 )
