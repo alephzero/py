@@ -13,7 +13,7 @@ def scoped_env(**kwargs):
 
 
 def test_env():
-    assert a0.env.root() == "/dev/shm"
+    assert a0.env.root() == "/dev/shm/alephzero"
     assert a0.env.topic() is None
 
     with scoped_env(A0_ROOT="/dev/shm/tmp", A0_TOPIC="test"):

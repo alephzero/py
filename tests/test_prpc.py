@@ -4,8 +4,7 @@ import threading
 
 
 def test_prpc():
-    os.putenv("A0_TOPIC_TMPL_PRPC", "alephzero/{topic}.prpc.a0")
-    a0.File.remove("alephzero/foo.prpc.a0")
+    a0.File.remove("foo.prpc.a0")
     assert not os.path.exists("/dev/shm/alephzero/foo.prpc.a0")
 
     cv = threading.Condition()

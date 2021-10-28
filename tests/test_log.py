@@ -4,8 +4,7 @@ import threading
 
 
 def test_logger():
-    os.putenv("A0_TOPIC_TMPL_LOG", "alephzero/{topic}.log.a0")
-    a0.File.remove("alephzero/foo.log.a0")
+    a0.File.remove("foo.log.a0")
     assert not os.path.exists("/dev/shm/alephzero/foo.log.a0")
 
     logger = a0.Logger("foo")
