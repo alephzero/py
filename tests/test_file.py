@@ -8,7 +8,7 @@ def test_file():
     file = a0.File("foo")
     assert len(file.arena.buf) == 16 * 1024 * 1024
     assert file.size == 16 * 1024 * 1024
-    assert file.path == "/dev/shm/foo"
+    assert file.path == "/dev/shm/alephzero/foo"
     assert file.fd > 3
     assert file.stat.st_size == 16 * 1024 * 1024
 

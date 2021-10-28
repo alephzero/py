@@ -4,8 +4,7 @@ import threading
 
 
 def test_pubsub():
-    os.putenv("A0_TOPIC_TMPL_PUBSUB", "alephzero/{topic}.pubsub.a0")
-    a0.File.remove("alephzero/foo.pubsub.a0")
+    a0.File.remove("foo.pubsub.a0")
     assert not os.path.exists("/dev/shm/alephzero/foo.pubsub.a0")
 
     p = a0.Publisher("foo")
