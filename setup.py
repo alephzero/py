@@ -21,7 +21,7 @@ module = Pybind11Extension(
 
 setup(
     name="alephzero",
-    version="0.3.4",
+    version="0.3.5",
     description="TODO: description",
     author="Leonid Shamis",
     author_email="leonid.shamis@gmail.com",
