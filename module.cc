@@ -75,7 +75,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init<>())
       .def_readwrite("create_options", &a0::File::Options::create_options)
       .def_readwrite("open_options", &a0::File::Options::open_options)
-      .def_static("DEFAULT", []() { return a0::File::Options::DEFAULT; });
+      .def_property_readonly_static("DEFAULT", [](py::object) { return a0::File::Options::DEFAULT; });
 
   pyfile
       .def(py::init<a0::string_view>())
@@ -103,6 +103,8 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def_static("remove_all", &a0::File::remove_all);
 
   py::implicitly_convertible<a0::File, a0::Arena>();
+
+  m.add_object("DEP", py::str(a0::DEP));
 
   py::class_<a0::Packet>(m, "Packet")
       .def(py::init<>())
@@ -303,11 +305,34 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   auto env = m.def_submodule("env");
   env.def("root", &a0::env::root);
   env.def("topic", &a0::env::topic);
+  env.def("topic_tmpl_cfg", &a0::env::topic_tmpl_cfg);
+  env.def("topic_tmpl_log", &a0::env::topic_tmpl_log);
+  env.def("topic_tmpl_prpc", &a0::env::topic_tmpl_prpc);
+  env.def("topic_tmpl_pubsub", &a0::env::topic_tmpl_pubsub);
+  env.def("topic_tmpl_rpc", &a0::env::topic_tmpl_rpc);
 
   py::class_<a0::TimeMono>(m, "TimeMono")
       .def_static("now", &a0::TimeMono::now)
       .def_static("parse", &a0::TimeMono::parse)
-      .def("__str__", &a0::TimeMono::to_string);
+      .def("__str__", &a0::TimeMono::to_string)
+      .def("__add__", [](const a0::TimeMono& self, double dur) {
+        return self + std::chrono::nanoseconds(int64_t(1e9 * dur));
+      })
+      .def("__iadd__", [](a0::TimeMono& self, double dur) {
+        return self += std::chrono::nanoseconds(int64_t(1e9 * dur));
+      })
+      .def("__sub__", [](const a0::TimeMono& self, double dur) {
+        return self - std::chrono::nanoseconds(int64_t(1e9 * dur));
+      })
+      .def("__isub__", [](a0::TimeMono& self, double dur) {
+        return self -= std::chrono::nanoseconds(int64_t(1e9 * dur));
+      })
+      .def("__lt__", &a0::TimeMono::operator<)
+      .def("__le__", &a0::TimeMono::operator<=)
+      .def("__gt__", &a0::TimeMono::operator>)
+      .def("__ge__", &a0::TimeMono::operator>=)
+      .def("__eq__", &a0::TimeMono::operator==)
+      .def("__ne__", &a0::TimeMono::operator!=);
 
   py::class_<a0::TimeWall>(m, "TimeWall")
       .def_static("now", &a0::TimeWall::now)

@@ -18,7 +18,7 @@ def test_file():
     a0.File.remove("foo")
     assert not os.path.exists(path)
 
-    fileopts = a0.File.Options.DEFAULT()
+    fileopts = a0.File.Options.DEFAULT
     fileopts.create_options.size = 1024
     file = a0.File("foo", fileopts)
     assert len(file.arena.buf) == 1024
