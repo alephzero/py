@@ -7,8 +7,6 @@
 
 namespace py = pybind11;
 
-#if (__cplusplus < 201703L)
-
 namespace pybind11 {
 namespace detail {
 
@@ -17,8 +15,6 @@ struct type_caster<a0::string_view> : string_caster<a0::string_view, true> {};
 
 } // namespace detail
 } // namespace pybind11
-
-#endif  // (__cplusplus < 201703L)
 
 template <typename T>
 struct NoGilDeleter {
