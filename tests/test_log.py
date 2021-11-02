@@ -21,7 +21,8 @@ def test_logger():
             State.msgs.append([hdrs["a0_log_level"], pkt.payload])
             cv.notify()
 
-    listener = a0.LogListener("foo", a0.LogLevel.INFO, callback)
+    listener = a0.LogListener(
+        "foo", a0.LogLevel.INFO, a0.INIT_AWAIT_NEW, a0.ITER_NEXT, callback)
 
     logger.crit("crit")
     logger.err("err")

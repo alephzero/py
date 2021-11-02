@@ -275,7 +275,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def("dbg", py::overload_cast<a0::Packet>(&a0::Logger::dbg));
 
   py::class_<a0::LogListener, nogil_holder<a0::LogListener>>(m, "LogListener")
-      .def(py::init<a0::LogTopic, a0::LogLevel, std::function<void(a0::Packet)>>());
+      .def(py::init<a0::LogTopic, a0::LogLevel, a0::ReaderInit, a0::ReaderIter, std::function<void(a0::Packet)>>());
 
   py::class_<a0::CfgTopic>(m, "CfgTopic")
       .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
