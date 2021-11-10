@@ -5,6 +5,7 @@ import pytest
 
 @pytest.fixture()
 def cfg():
+    a0.File.remove(a0.env.topic_tmpl_cfg().replace("{topic}", "topic"))
     cfg = a0.Cfg("topic")
     cfg.write(
         json.dumps({
@@ -142,8 +143,17 @@ def test_cfg_class(cfg):
     assert str(foo) == "Foo(a=abc, b=bcd)"
 
 
-def test_cfg_mergepatch(cfg):
+def test_cfg_write_if_empty():
+    a0.File.remove(a0.env.topic_tmpl_cfg().replace("{topic}", "topic"))
     cfg = a0.Cfg("topic")
+    assert cfg.write_if_empty("cfg 0")
+    assert not cfg.write_if_empty("cfg 1")
+    assert cfg.read().payload == b"cfg 0"
+    cfg.write("cfg 2")
+    assert cfg.read().payload == b"cfg 2"
+
+
+def test_cfg_mergepatch(cfg):
     assert json.loads(cfg.read().payload) == {
         "bar": 3,
         "bat": [1, 2, 3],

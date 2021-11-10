@@ -7,8 +7,6 @@
 
 namespace py = pybind11;
 
-#if (__cplusplus < 201703L)
-
 namespace pybind11 {
 namespace detail {
 
@@ -17,8 +15,6 @@ struct type_caster<a0::string_view> : string_caster<a0::string_view, true> {};
 
 } // namespace detail
 } // namespace pybind11
-
-#endif  // (__cplusplus < 201703L)
 
 template <typename T>
 struct NoGilDeleter {
@@ -111,7 +107,8 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init([](py::bytes payload) {
         return a0::Packet(as_string_view(payload), a0::ref);
       }), py::keep_alive<0, 1>())
-      .def(py::init([](std::vector<std::pair<std::string, std::string>> hdrs, py::bytes payload) {
+      .def(py::init([](std::vector<std::pair<std::string, std::string>> hdrs,
+                       py::bytes payload) {
         std::unordered_multimap<std::string, std::string> hdrs_map;
         for (auto& hdr : hdrs) {
           hdrs_map.insert({std::move(hdr.first), std::move(hdr.second)});
@@ -146,171 +143,6 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   py::implicitly_convertible<py::bytes, a0::Packet>();
   py::implicitly_convertible<py::str, a0::Packet>();
 
-  py::class_<a0::Middleware>(m, "Middleware");
-  m.def("add_time_mono_header", &a0::add_time_mono_header);
-  m.def("add_time_wall_header", &a0::add_time_wall_header);
-  m.def("add_writer_id_header", &a0::add_writer_id_header);
-  m.def("add_writer_seq_header", &a0::add_writer_seq_header);
-  m.def("add_transport_seq_header", &a0::add_transport_seq_header);
-  m.def("add_standard_headers", &a0::add_standard_headers);
-
-  py::class_<a0::Writer>(m, "Writer")
-      .def(py::init<a0::Arena>())
-      .def("write", py::overload_cast<a0::Packet>(&a0::Writer::write))
-      .def("push", &a0::Writer::push)
-      .def("wrap", &a0::Writer::wrap);
-
-  py::enum_<a0::ReaderInit>(m, "ReaderInit")
-      .value("INIT_OLDEST", A0_INIT_OLDEST)
-      .value("INIT_MOST_RECENT", A0_INIT_MOST_RECENT)
-      .value("INIT_AWAIT_NEW", A0_INIT_AWAIT_NEW)
-      .export_values();
-
-  py::enum_<a0::ReaderIter>(m, "ReaderIter")
-      .value("ITER_NEXT", A0_ITER_NEXT)
-      .value("ITER_NEWEST", A0_ITER_NEWEST)
-      .export_values();
-
-  py::class_<a0::ReaderSync>(m, "ReaderSync")
-      .def(py::init<a0::Arena, a0::ReaderInit, a0::ReaderIter>())
-      .def("has_next", &a0::ReaderSync::has_next)
-      .def("next", &a0::ReaderSync::next);
-
-  py::class_<a0::Reader, nogil_holder<a0::Reader>>(m, "Reader")
-      .def(py::init<a0::Arena,
-                    a0::ReaderInit,
-                    a0::ReaderIter,
-                    std::function<void(a0::Packet)>>())
-      .def_static("read_one",
-                  py::overload_cast<a0::Arena, a0::ReaderInit, int>(&a0::Reader::read_one),
-                  py::arg("arena"),
-                  py::arg("init"),
-                  py::arg("flags") = 0);
-
-  py::class_<a0::PubSubTopic>(m, "PubSubTopic")
-      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
-
-  py::implicitly_convertible<std::string, a0::PubSubTopic>();
-
-  py::class_<a0::Publisher>(m, "Publisher")
-      .def(py::init<a0::PubSubTopic>())
-      .def("pub", py::overload_cast<a0::Packet>(&a0::Publisher::pub));
-
-  py::class_<a0::SubscriberSync>(m, "SubscriberSync")
-      .def(py::init<a0::PubSubTopic, a0::ReaderInit, a0::ReaderIter>())
-      .def("has_next", &a0::SubscriberSync::has_next)
-      .def("next", &a0::SubscriberSync::next);
-
-  py::class_<a0::Subscriber, nogil_holder<a0::Subscriber>>(m, "Subscriber")
-      .def(py::init<a0::PubSubTopic,
-                    a0::ReaderInit,
-                    a0::ReaderIter,
-                    std::function<void(a0::Packet)>>())
-      .def_static("read_one",
-                  py::overload_cast<a0::PubSubTopic, a0::ReaderInit, int>(&a0::Subscriber::read_one),
-                  py::arg("topic"),
-                  py::arg("init"),
-                  py::arg("flags") = 0);
-
-  py::class_<a0::RpcTopic>(m, "RpcTopic")
-      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
-
-  py::implicitly_convertible<std::string, a0::RpcTopic>();
-
-  py::class_<a0::RpcRequest>(m, "RpcRequest")
-      .def_property_readonly("pkt", &a0::RpcRequest::pkt)
-      .def("reply", py::overload_cast<a0::Packet>(&a0::RpcRequest::reply));
-
-  py::class_<a0::RpcServer, nogil_holder<a0::RpcServer>>(m, "RpcServer")
-      .def(py::init<a0::RpcTopic,
-                    std::function<void(a0::RpcRequest)>,
-                    std::function<void(a0::string_view)>>());
-
-  py::class_<a0::RpcClient, nogil_holder<a0::RpcClient>>(m, "RpcClient")
-      .def(py::init<a0::RpcTopic>())
-      .def("send", py::overload_cast<a0::Packet, std::function<void(a0::Packet)>>(&a0::RpcClient::send))
-      .def("cancel", &a0::RpcClient::cancel);
-
-  py::class_<a0::PrpcTopic>(m, "PrpcTopic")
-      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
-
-  py::implicitly_convertible<std::string, a0::PrpcTopic>();
-
-  py::class_<a0::PrpcConnection>(m, "PrpcConnection")
-      .def_property_readonly("pkt", &a0::PrpcConnection::pkt)
-      .def("send", py::overload_cast<a0::Packet, bool>(&a0::PrpcConnection::send));
-
-  py::class_<a0::PrpcServer, nogil_holder<a0::PrpcServer>>(m, "PrpcServer")
-      .def(py::init<a0::PrpcTopic,
-                    std::function<void(a0::PrpcConnection)>,
-                    std::function<void(a0::string_view)>>());
-
-  py::class_<a0::PrpcClient, nogil_holder<a0::PrpcClient>>(m, "PrpcClient")
-      .def(py::init<a0::PrpcTopic>())
-      .def("connect", py::overload_cast<a0::Packet, std::function<void(a0::Packet, bool)>>(&a0::PrpcClient::connect))
-      .def("cancel", &a0::PrpcClient::cancel);
-
-  py::class_<a0::LogTopic>(m, "LogTopic")
-      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
-
-  py::implicitly_convertible<std::string, a0::LogTopic>();
-
-  py::enum_<a0::LogLevel>(m, "LogLevel")
-      .value("CRIT", a0::LogLevel::CRIT)
-      .value("ERR", a0::LogLevel::ERR)
-      .value("WARN", a0::LogLevel::WARN)
-      .value("INFO", a0::LogLevel::INFO)
-      .value("DBG", a0::LogLevel::DBG)
-      .value("MIN", a0::LogLevel::MIN)
-      .value("MAX", a0::LogLevel::MAX)
-      .export_values();
-
-  py::class_<a0::Logger>(m, "Logger")
-      .def(py::init<a0::LogTopic>())
-      .def("log", py::overload_cast<a0::LogLevel, a0::Packet>(&a0::Logger::log))
-      .def("crit", py::overload_cast<a0::Packet>(&a0::Logger::crit))
-      .def("err", py::overload_cast<a0::Packet>(&a0::Logger::err))
-      .def("warn", py::overload_cast<a0::Packet>(&a0::Logger::warn))
-      .def("info", py::overload_cast<a0::Packet>(&a0::Logger::info))
-      .def("dbg", py::overload_cast<a0::Packet>(&a0::Logger::dbg));
-
-  py::class_<a0::LogListener, nogil_holder<a0::LogListener>>(m, "LogListener")
-      .def(py::init<a0::LogTopic, a0::LogLevel, a0::ReaderInit, a0::ReaderIter, std::function<void(a0::Packet)>>());
-
-  py::class_<a0::CfgTopic>(m, "CfgTopic")
-      .def(py::init<std::string, a0::File::Options>(), py::arg("name"), py::arg("file_opts") = a0::File::Options::DEFAULT);
-
-  py::implicitly_convertible<std::string, a0::CfgTopic>();
-
-  py::class_<a0::Cfg>(m, "Cfg")
-      .def(py::init<a0::CfgTopic>())
-      .def("read", &a0::Cfg::read, py::arg("flags") = 0)
-      .def("write", py::overload_cast<a0::Packet>(&a0::Cfg::write))
-      .def("mergepatch", [](a0::Cfg* self, py::dict mergepatch_dict) {
-        auto mergepatch_str = py::cast<std::string>(py::module_::import("json").attr("dumps")(mergepatch_dict));
-        auto yydoc = yyjson_read(mergepatch_str.c_str(), mergepatch_str.size(), 0);
-        auto err = a0_cfg_mergepatch_yyjson(self->c.get(), *yydoc);
-        yyjson_doc_free(yydoc);
-        if (err) {
-          throw std::runtime_error(a0_strerror(err));
-        }
-      });
-
-  py::class_<a0::CfgWatcher, nogil_holder<a0::CfgWatcher>>(m, "CfgWatcher")
-      .def(py::init<a0::CfgTopic, std::function<void(a0::Packet)>>());
-
-  py::class_<a0::Discovery, nogil_holder<a0::Discovery>>(m, "Discovery")
-      .def(py::init<const std::string&, std::function<void(const std::string&)>>());
-
-  auto env = m.def_submodule("env");
-  env.def("root", &a0::env::root);
-  env.def("topic", &a0::env::topic);
-  env.def("topic_tmpl_cfg", &a0::env::topic_tmpl_cfg);
-  env.def("topic_tmpl_log", &a0::env::topic_tmpl_log);
-  env.def("topic_tmpl_prpc", &a0::env::topic_tmpl_prpc);
-  env.def("topic_tmpl_pubsub", &a0::env::topic_tmpl_pubsub);
-  env.def("topic_tmpl_rpc", &a0::env::topic_tmpl_rpc);
-
   py::class_<a0::TimeMono>(m, "TimeMono")
       .def_static("now", &a0::TimeMono::now)
       .def_static("parse", &a0::TimeMono::parse)
@@ -338,4 +170,208 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def_static("now", &a0::TimeWall::now)
       .def_static("parse", &a0::TimeWall::parse)
       .def("__str__", &a0::TimeWall::to_string);
+
+  py::class_<a0::Middleware>(m, "Middleware");
+  m.def("add_time_mono_header", &a0::add_time_mono_header);
+  m.def("add_time_wall_header", &a0::add_time_wall_header);
+  m.def("add_writer_id_header", &a0::add_writer_id_header);
+  m.def("add_writer_seq_header", &a0::add_writer_seq_header);
+  m.def("add_transport_seq_header", &a0::add_transport_seq_header);
+  m.def("add_standard_headers", &a0::add_standard_headers);
+
+  py::class_<a0::Writer>(m, "Writer")
+      .def(py::init<a0::Arena>())
+      .def("write", py::overload_cast<a0::Packet>(&a0::Writer::write))
+      .def("push", &a0::Writer::push)
+      .def("wrap", &a0::Writer::wrap);
+
+  py::enum_<a0::ReaderInit>(m, "ReaderInit")
+      .value("INIT_OLDEST", A0_INIT_OLDEST)
+      .value("INIT_MOST_RECENT", A0_INIT_MOST_RECENT)
+      .value("INIT_AWAIT_NEW", A0_INIT_AWAIT_NEW)
+      .export_values();
+
+  py::enum_<a0::ReaderIter>(m, "ReaderIter")
+      .value("ITER_NEXT", A0_ITER_NEXT)
+      .value("ITER_NEWEST", A0_ITER_NEWEST)
+      .export_values();
+
+  py::class_<a0::ReaderSync>(m, "ReaderSync")
+      .def(py::init<a0::Arena, a0::ReaderInit, a0::ReaderIter>())
+      .def("can_read", &a0::ReaderSync::can_read)
+      .def("read", &a0::ReaderSync::read)
+      .def("read_blocking",
+           py::overload_cast<>(&a0::ReaderSync::read_blocking),
+           py::call_guard<py::gil_scoped_release>())
+      .def("read_blocking",
+           py::overload_cast<a0::TimeMono>(&a0::ReaderSync::read_blocking),
+           py::call_guard<py::gil_scoped_release>(),
+           py::arg("timeout"));
+
+  py::class_<a0::Reader, nogil_holder<a0::Reader>>(m, "Reader")
+      .def(py::init<a0::Arena,
+                    a0::ReaderInit,
+                    a0::ReaderIter,
+                    std::function<void(a0::Packet)>>());
+
+  py::class_<a0::PubSubTopic>(m, "PubSubTopic")
+      .def(py::init<std::string, a0::File::Options>(),
+           py::arg("name"),
+           py::arg("file_opts") = a0::File::Options::DEFAULT);
+
+  py::implicitly_convertible<std::string, a0::PubSubTopic>();
+
+  py::class_<a0::Publisher>(m, "Publisher")
+      .def(py::init<a0::PubSubTopic>())
+      .def("pub", py::overload_cast<a0::Packet>(&a0::Publisher::pub));
+
+  py::class_<a0::SubscriberSync>(m, "SubscriberSync")
+      .def(py::init<a0::PubSubTopic, a0::ReaderInit, a0::ReaderIter>())
+      .def("can_read", &a0::SubscriberSync::can_read)
+      .def("read", &a0::SubscriberSync::read)
+      .def("read_blocking",
+           py::overload_cast<>(&a0::SubscriberSync::read_blocking),
+           py::call_guard<py::gil_scoped_release>())
+      .def("read_blocking",
+           py::overload_cast<a0::TimeMono>(&a0::SubscriberSync::read_blocking),
+           py::call_guard<py::gil_scoped_release>(),
+           py::arg("timeout"));
+
+  py::class_<a0::Subscriber, nogil_holder<a0::Subscriber>>(m, "Subscriber")
+      .def(py::init<a0::PubSubTopic,
+                    a0::ReaderInit,
+                    a0::ReaderIter,
+                    std::function<void(a0::Packet)>>());
+
+  py::class_<a0::RpcTopic>(m, "RpcTopic")
+      .def(py::init<std::string, a0::File::Options>(),
+           py::arg("name"),
+           py::arg("file_opts") = a0::File::Options::DEFAULT);
+
+  py::implicitly_convertible<std::string, a0::RpcTopic>();
+
+  py::class_<a0::RpcRequest>(m, "RpcRequest")
+      .def_property_readonly("pkt", &a0::RpcRequest::pkt)
+      .def("reply", py::overload_cast<a0::Packet>(&a0::RpcRequest::reply));
+
+  py::class_<a0::RpcServer, nogil_holder<a0::RpcServer>>(m, "RpcServer")
+      .def(py::init<a0::RpcTopic,
+                    std::function<void(a0::RpcRequest)>,
+                    std::function<void(a0::string_view)>>());
+
+  py::class_<a0::RpcClient, nogil_holder<a0::RpcClient>>(m, "RpcClient")
+      .def(py::init<a0::RpcTopic>())
+      .def("send",
+           py::overload_cast<a0::Packet, std::function<void(a0::Packet)>>(&a0::RpcClient::send))
+      .def("send_blocking",
+           py::overload_cast<a0::Packet>(&a0::RpcClient::send_blocking),
+           py::call_guard<py::gil_scoped_release>(),
+           py::arg("request"))
+      .def("send_blocking",
+           py::overload_cast<a0::Packet, a0::TimeMono>(&a0::RpcClient::send_blocking),
+           py::call_guard<py::gil_scoped_release>(),
+           py::arg("request"),
+           py::arg("timeout"))
+      .def("cancel", &a0::RpcClient::cancel);
+
+  py::class_<a0::PrpcTopic>(m, "PrpcTopic")
+      .def(py::init<std::string, a0::File::Options>(),
+           py::arg("name"),
+           py::arg("file_opts") = a0::File::Options::DEFAULT);
+
+  py::implicitly_convertible<std::string, a0::PrpcTopic>();
+
+  py::class_<a0::PrpcConnection>(m, "PrpcConnection")
+      .def_property_readonly("pkt", &a0::PrpcConnection::pkt)
+      .def("send",
+           py::overload_cast<a0::Packet, bool>(&a0::PrpcConnection::send));
+
+  py::class_<a0::PrpcServer, nogil_holder<a0::PrpcServer>>(m, "PrpcServer")
+      .def(py::init<a0::PrpcTopic,
+                    std::function<void(a0::PrpcConnection)>,
+                    std::function<void(a0::string_view)>>());
+
+  py::class_<a0::PrpcClient, nogil_holder<a0::PrpcClient>>(m, "PrpcClient")
+      .def(py::init<a0::PrpcTopic>())
+      .def("connect",
+           py::overload_cast<a0::Packet, std::function<void(a0::Packet, bool)>>(&a0::PrpcClient::connect))
+      .def("cancel",
+           &a0::PrpcClient::cancel);
+
+  py::class_<a0::LogTopic>(m, "LogTopic")
+      .def(py::init<std::string, a0::File::Options>(),
+           py::arg("name"),
+           py::arg("file_opts") = a0::File::Options::DEFAULT);
+
+  py::implicitly_convertible<std::string, a0::LogTopic>();
+
+  py::enum_<a0::LogLevel>(m, "LogLevel")
+      .value("CRIT", a0::LogLevel::CRIT)
+      .value("ERR", a0::LogLevel::ERR)
+      .value("WARN", a0::LogLevel::WARN)
+      .value("INFO", a0::LogLevel::INFO)
+      .value("DBG", a0::LogLevel::DBG)
+      .value("MIN", a0::LogLevel::MIN)
+      .value("MAX", a0::LogLevel::MAX)
+      .export_values();
+
+  py::class_<a0::Logger>(m, "Logger")
+      .def(py::init<a0::LogTopic>())
+      .def("log", py::overload_cast<a0::LogLevel, a0::Packet>(&a0::Logger::log))
+      .def("crit", py::overload_cast<a0::Packet>(&a0::Logger::crit))
+      .def("err", py::overload_cast<a0::Packet>(&a0::Logger::err))
+      .def("warn", py::overload_cast<a0::Packet>(&a0::Logger::warn))
+      .def("info", py::overload_cast<a0::Packet>(&a0::Logger::info))
+      .def("dbg", py::overload_cast<a0::Packet>(&a0::Logger::dbg));
+
+  py::class_<a0::LogListener, nogil_holder<a0::LogListener>>(m, "LogListener")
+      .def(py::init<a0::LogTopic,
+                    a0::LogLevel,
+                    a0::ReaderInit,
+                    a0::ReaderIter,
+                    std::function<void(a0::Packet)>>());
+
+  py::class_<a0::CfgTopic>(m, "CfgTopic")
+      .def(py::init<std::string, a0::File::Options>(),
+           py::arg("name"),
+           py::arg("file_opts") = a0::File::Options::DEFAULT);
+
+  py::implicitly_convertible<std::string, a0::CfgTopic>();
+
+  py::class_<a0::Cfg>(m, "Cfg")
+      .def(py::init<a0::CfgTopic>())
+      .def("read", &a0::Cfg::read)
+      .def("read_blocking",
+           py::overload_cast<>(&a0::Cfg::read_blocking, py::const_),
+           py::call_guard<py::gil_scoped_release>())
+      .def("read_blocking",
+           py::overload_cast<a0::TimeMono>(&a0::Cfg::read_blocking, py::const_),
+           py::call_guard<py::gil_scoped_release>(),
+           py::arg("timeout"))
+      .def("write", py::overload_cast<a0::Packet>(&a0::Cfg::write))
+      .def("write_if_empty", py::overload_cast<a0::Packet>(&a0::Cfg::write_if_empty))
+      .def("mergepatch", [](a0::Cfg* self, py::dict mergepatch_dict) {
+        auto mergepatch_str = py::cast<std::string>(py::module_::import("json").attr("dumps")(mergepatch_dict));
+        auto yydoc = yyjson_read(mergepatch_str.c_str(), mergepatch_str.size(), 0);
+        auto err = a0_cfg_mergepatch_yyjson(self->c.get(), *yydoc);
+        yyjson_doc_free(yydoc);
+        if (err) {
+          throw std::runtime_error(a0_strerror(err));
+        }
+      });
+
+  py::class_<a0::CfgWatcher, nogil_holder<a0::CfgWatcher>>(m, "CfgWatcher")
+      .def(py::init<a0::CfgTopic, std::function<void(a0::Packet)>>());
+
+  py::class_<a0::Discovery, nogil_holder<a0::Discovery>>(m, "Discovery")
+      .def(py::init<const std::string&, std::function<void(const std::string&)>>());
+
+  auto env = m.def_submodule("env");
+  env.def("root", &a0::env::root);
+  env.def("topic", &a0::env::topic);
+  env.def("topic_tmpl_cfg", &a0::env::topic_tmpl_cfg);
+  env.def("topic_tmpl_log", &a0::env::topic_tmpl_log);
+  env.def("topic_tmpl_prpc", &a0::env::topic_tmpl_prpc);
+  env.def("topic_tmpl_pubsub", &a0::env::topic_tmpl_pubsub);
+  env.def("topic_tmpl_rpc", &a0::env::topic_tmpl_rpc);
 }
