@@ -1,6 +1,8 @@
 import a0
 import os
+import pytest
 import threading
+import time
 
 
 def test_rpc():
@@ -17,8 +19,11 @@ def test_rpc():
     def onrequest(req):
         with cv:
             State.requests.append(req.pkt.payload)
-            if req.pkt.payload.decode() == "reply":
+            if req.pkt.payload == b"reply":
                 req.reply(b"reply")
+            if req.pkt.payload.startswith(b"sleep"):
+                time.sleep(0.2)
+                req.reply(b"slept")
             cv.notify()
 
     def oncancel(id):
@@ -44,3 +49,10 @@ def test_rpc():
     with cv:
         cv.wait_for(lambda: (len(State.requests) == 3 and len(State.cancels) ==
                              1 and len(State.replies) == 2))
+
+    reply = client.send_blocking("sleep")
+    assert reply.payload == b"slept"
+    reply = client.send_blocking("sleep", timeout=a0.TimeMono.now() + 0.3)
+    assert reply.payload == b"slept"
+    with pytest.raises(RuntimeError, match="Connection timed out"):
+        client.send_blocking("sleep", timeout=a0.TimeMono.now() + 0.1)

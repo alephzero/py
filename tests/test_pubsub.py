@@ -1,6 +1,8 @@
 import a0
 import os
+import pytest
 import threading
+import time
 
 
 def test_pubsub():
@@ -23,10 +25,10 @@ def test_pubsub():
 
     s = a0.Subscriber("foo", a0.INIT_OLDEST, a0.ITER_NEXT, callback)
 
-    assert not ss.has_next()
+    assert not ss.can_read()
     p.pub("hello")
-    assert ss.has_next()
-    pkt = ss.next()
+    assert ss.can_read()
+    pkt = ss.read()
     assert pkt.payload == b"hello"
     assert sorted(k for k, _ in pkt.headers) == [
         "a0_time_mono",
@@ -35,11 +37,11 @@ def test_pubsub():
         "a0_writer_id",
         "a0_writer_seq",
     ]
-    assert not ss.has_next()
+    assert not ss.can_read()
 
     p.pub(a0.Packet([("key", "val")], "world"))
 
-    pkt = ss.next()
+    pkt = ss.read()
     assert pkt.payload == b"world"
     assert sorted(k for k, _ in pkt.headers) == [
         "a0_time_mono",
@@ -53,3 +55,24 @@ def test_pubsub():
     with cv:
         cv.wait_for(lambda: len(State.payloads) == 2)
     assert State.payloads == [b"hello", b"world"]
+
+    def sleep_write(timeout, pkt):
+        time.sleep(timeout)
+        p.pub(pkt)
+
+    t = threading.Thread(target=sleep_write, args=(0.1, b"post_sleep"))
+    t.start()
+    assert ss.read_blocking().payload == b"post_sleep"
+    t.join()
+
+    t = threading.Thread(target=sleep_write, args=(0.1, b"post_sleep"))
+    t.start()
+    assert ss.read_blocking(timeout=a0.TimeMono.now() +
+                            0.2).payload == b"post_sleep"
+    t.join()
+
+    t = threading.Thread(target=sleep_write, args=(0.2, b"post_sleep"))
+    t.start()
+    with pytest.raises(RuntimeError, match="Connection timed out"):
+        ss.read_blocking(timeout=a0.TimeMono.now() + 0.1)
+    t.join()
