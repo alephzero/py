@@ -115,9 +115,9 @@ def update_configs():
 ###########
 
 
-class aio_sub:
+class _aio_read_base:
 
-    def __init__(self, topic, init_, iter_, loop=None):
+    def __init__(self, generator_factory, loop=None):
         ns = types.SimpleNamespace()
         ns.loop = loop or asyncio.get_event_loop()
         ns.q = asyncio.Queue(1)
@@ -138,13 +138,13 @@ class aio_sub:
                 ns.cv.wait()
 
         self._ns = ns
-        self._sub = Subscriber(topic, init_, iter_, callback)
+        self._reader = generator_factory(callback)
 
     def __del__(self):
         with self._ns.cv:
             self._ns.closing = True
             self._ns.cv.notify()
-        del self._sub  # Block until callback completes.
+        del self._reader  # Block until callback completes.
 
     def __aiter__(self):
         return self
@@ -156,8 +156,42 @@ class aio_sub:
         return pkt
 
 
+def aio_read(arena, init_, iter_, loop=None):
+
+    def factory(callback):
+        return Reader(arena, init_, iter_, callback)
+
+    return _aio_read_base(factory, loop)
+
+
+async def aio_read_one(arena, init_, loop=None):
+    async for pkt in aio_read(arena, init_, ITER_NEXT, loop):
+        return pkt
+
+
+def aio_sub(topic, init_, iter_, loop=None):
+
+    def factory(callback):
+        return Subscriber(topic, init_, iter_, callback)
+
+    return _aio_read_base(factory, loop)
+
+
 async def aio_sub_one(topic, init_, loop=None):
     async for pkt in aio_sub(topic, init_, ITER_NEXT, loop):
+        return pkt
+
+
+def aio_cfg(topic, loop=None):
+
+    def factory(callback):
+        return CfgWatcher(topic, callback)
+
+    return _aio_read_base(factory, loop)
+
+
+async def aio_cfg_one(topic, loop=None):
+    async for pkt in aio_cfg(topic, loop):
         return pkt
 
 

@@ -1,9 +1,9 @@
+#include <Python.h>
 #include <a0.h>
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <Python.h>
 
 namespace py = pybind11;
 
@@ -13,8 +13,8 @@ namespace detail {
 template <>
 struct type_caster<a0::string_view> : string_caster<a0::string_view, true> {};
 
-} // namespace detail
-} // namespace pybind11
+}  // namespace detail
+}  // namespace pybind11
 
 template <typename T>
 struct NoGilDeleter {
@@ -81,19 +81,19 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def_property_readonly("path", &a0::File::path)
       .def_property_readonly("fd", &a0::File::fd)
       .def_property_readonly("stat", [](const a0::File* self) {
-          auto stat = self->stat();
-          auto os = py::module::import("os");
-          return os.attr("stat_result")(py::make_tuple(
-              stat.st_mode,
-              stat.st_ino,
-              stat.st_dev,
-              stat.st_nlink,
-              stat.st_uid,
-              stat.st_gid,
-              stat.st_size,
-              stat.st_atime,
-              stat.st_mtime,
-              stat.st_ctime));
+        auto stat = self->stat();
+        auto os = py::module::import("os");
+        return os.attr("stat_result")(py::make_tuple(
+            stat.st_mode,
+            stat.st_ino,
+            stat.st_dev,
+            stat.st_nlink,
+            stat.st_uid,
+            stat.st_gid,
+            stat.st_size,
+            stat.st_atime,
+            stat.st_mtime,
+            stat.st_ctime));
       })
       .def_static("remove", &a0::File::remove)
       .def_static("remove_all", &a0::File::remove_all);
@@ -105,33 +105,37 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   py::class_<a0::Packet>(m, "Packet")
       .def(py::init<>())
       .def(py::init([](py::bytes payload) {
-        return a0::Packet(as_string_view(payload), a0::ref);
-      }), py::keep_alive<0, 1>())
+             return a0::Packet(as_string_view(payload), a0::ref);
+           }),
+           py::keep_alive<0, 1>())
       .def(py::init([](std::vector<std::pair<std::string, std::string>> hdrs,
                        py::bytes payload) {
-        std::unordered_multimap<std::string, std::string> hdrs_map;
-        for (auto& hdr : hdrs) {
-          hdrs_map.insert({std::move(hdr.first), std::move(hdr.second)});
-        }
-        return a0::Packet(std::move(hdrs_map), as_string_view(payload), a0::ref);
-      }), py::keep_alive<0, 2>())
+             std::unordered_multimap<std::string, std::string> hdrs_map;
+             for (auto& hdr : hdrs) {
+               hdrs_map.insert({std::move(hdr.first), std::move(hdr.second)});
+             }
+             return a0::Packet(std::move(hdrs_map), as_string_view(payload), a0::ref);
+           }),
+           py::keep_alive<0, 2>())
       .def(py::init([](py::str payload) {
-        return a0::Packet(as_string_view(payload), a0::ref);
-      }), py::keep_alive<0, 1>())
+             return a0::Packet(as_string_view(payload), a0::ref);
+           }),
+           py::keep_alive<0, 1>())
       .def(py::init([](std::vector<std::pair<std::string, std::string>> hdrs, py::str payload) {
-        std::unordered_multimap<std::string, std::string> hdrs_map;
-        for (auto& hdr : hdrs) {
-          hdrs_map.insert({std::move(hdr.first), std::move(hdr.second)});
-        }
-        return a0::Packet(std::move(hdrs_map), as_string_view(payload), a0::ref);
-      }), py::keep_alive<0, 2>())
+             std::unordered_multimap<std::string, std::string> hdrs_map;
+             for (auto& hdr : hdrs) {
+               hdrs_map.insert({std::move(hdr.first), std::move(hdr.second)});
+             }
+             return a0::Packet(std::move(hdrs_map), as_string_view(payload), a0::ref);
+           }),
+           py::keep_alive<0, 2>())
       .def_property_readonly("id", &a0::Packet::id)
       .def_property_readonly("headers", [](a0::Packet* self) {
-          std::vector<std::pair<std::string, std::string>> ret;
-          for (auto& hdr : self->headers()) {
-            ret.push_back({hdr.first, hdr.second});
-          }
-          return ret;
+        std::vector<std::pair<std::string, std::string>> ret;
+        for (auto& hdr : self->headers()) {
+          ret.push_back({hdr.first, hdr.second});
+        }
+        return ret;
       })
       .def_property_readonly("payload", [](a0::Packet* self) {
         return py::bytes(self->payload().data(), self->payload().size());
@@ -206,7 +210,12 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def("read_blocking",
            py::overload_cast<a0::TimeMono>(&a0::ReaderSync::read_blocking),
            py::call_guard<py::gil_scoped_release>(),
-           py::arg("timeout"));
+           py::arg("timeout"))
+      .def(
+          "read_blocking", [](a0::ReaderSync& self, double timeout) {
+            return self.read_blocking(a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)));
+          },
+          py::call_guard<py::gil_scoped_release>(), py::arg("timeout"));
 
   py::class_<a0::Reader, nogil_holder<a0::Reader>>(m, "Reader")
       .def(py::init<a0::Arena,
@@ -235,7 +244,12 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def("read_blocking",
            py::overload_cast<a0::TimeMono>(&a0::SubscriberSync::read_blocking),
            py::call_guard<py::gil_scoped_release>(),
-           py::arg("timeout"));
+           py::arg("timeout"))
+      .def(
+          "read_blocking", [](a0::SubscriberSync& self, double timeout) {
+            return self.read_blocking(a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)));
+          },
+          py::call_guard<py::gil_scoped_release>(), py::arg("timeout"));
 
   py::class_<a0::Subscriber, nogil_holder<a0::Subscriber>>(m, "Subscriber")
       .def(py::init<a0::PubSubTopic,
@@ -272,6 +286,11 @@ PYBIND11_MODULE(alephzero_bindings, m) {
            py::call_guard<py::gil_scoped_release>(),
            py::arg("request"),
            py::arg("timeout"))
+      .def(
+          "send_blocking", [](a0::RpcClient& self, a0::Packet pkt, double timeout) {
+            return self.send_blocking(pkt, a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)));
+          },
+          py::call_guard<py::gil_scoped_release>(), py::arg("request"), py::arg("timeout"))
       .def("cancel", &a0::RpcClient::cancel);
 
   py::class_<a0::PrpcTopic>(m, "PrpcTopic")
@@ -348,6 +367,11 @@ PYBIND11_MODULE(alephzero_bindings, m) {
            py::overload_cast<a0::TimeMono>(&a0::Cfg::read_blocking, py::const_),
            py::call_guard<py::gil_scoped_release>(),
            py::arg("timeout"))
+      .def(
+          "read_blocking", [](a0::Cfg& self, double timeout) {
+            return self.read_blocking(a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)));
+          },
+          py::call_guard<py::gil_scoped_release>(), py::arg("timeout"))
       .def("write", py::overload_cast<a0::Packet>(&a0::Cfg::write))
       .def("write_if_empty", py::overload_cast<a0::Packet>(&a0::Cfg::write_if_empty))
       .def("mergepatch", [](a0::Cfg* self, py::dict mergepatch_dict) {
