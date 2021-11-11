@@ -1,6 +1,10 @@
 import a0
 import json
 import pytest
+import threading
+import time
+
+pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture()
@@ -171,3 +175,31 @@ def test_cfg_mergepatch(cfg):
             "b": "bbb"
         },
     }
+
+
+async def test_aio_cfg():
+    a0.File.remove(a0.env.topic_tmpl_cfg().replace("{topic}", "topic"))
+    cfg = a0.Cfg("topic")
+
+    def thread_main():
+        for i in range(5):
+            time.sleep(0.1)
+            cfg.write("keep going")
+        cfg.write("done")
+
+    t = threading.Thread(target=thread_main)
+    t.start()
+
+    assert (await a0.aio_cfg_one("topic")).payload == b"keep going"
+
+    cnt = 0
+    async for pkt in a0.aio_cfg("topic"):
+        cnt += 1
+        assert pkt.payload in [b"keep going", b"done"]
+        if pkt.payload == b"done":
+            break
+    assert cnt == 6
+
+    assert (await a0.aio_cfg_one("topic")).payload == b"done"
+
+    t.join()

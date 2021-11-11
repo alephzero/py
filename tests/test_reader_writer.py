@@ -3,6 +3,8 @@ import pytest
 import threading
 import time
 
+pytestmark = pytest.mark.asyncio
+
 
 def test_reader_writer():
     a0.File.remove("foo")
@@ -60,12 +62,42 @@ def test_reader_writer():
 
     t = threading.Thread(target=sleep_write, args=(0.1, b"post_sleep"))
     t.start()
-    assert rs.read_blocking(timeout=a0.TimeMono.now() +
-                            0.2).payload == b"post_sleep"
+    assert rs.read_blocking(timeout=0.2).payload == b"post_sleep"
     t.join()
 
     t = threading.Thread(target=sleep_write, args=(0.2, b"post_sleep"))
     t.start()
     with pytest.raises(RuntimeError, match="Connection timed out"):
         rs.read_blocking(timeout=a0.TimeMono.now() + 0.1)
+    t.join()
+
+
+async def test_aio_read():
+    a0.File.remove("foo")
+    file = a0.File("foo")
+
+    w = a0.Writer(file)
+
+    def thread_main():
+        for i in range(5):
+            time.sleep(0.1)
+            w.write("keep going")
+        w.write("done")
+
+    t = threading.Thread(target=thread_main)
+    t.start()
+
+    assert (await a0.aio_read_one(file,
+                                  a0.INIT_MOST_RECENT)).payload == b"keep going"
+
+    cnt = 0
+    async for pkt in a0.aio_read(file, a0.INIT_OLDEST, a0.ITER_NEXT):
+        cnt += 1
+        assert pkt.payload in [b"keep going", b"done"]
+        if pkt.payload == b"done":
+            break
+    assert cnt == 6
+
+    assert (await a0.aio_read_one(file, a0.INIT_MOST_RECENT)).payload == b"done"
+
     t.join()
