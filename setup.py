@@ -11,6 +11,7 @@ subprocess.run(
 module = Pybind11Extension(
     "alephzero_bindings",
     sources=["module.cc"],
+    extra_compile_args=["-flto", "-O2"],
     extra_objects=["./alephzero/lib/libalephzero.a"],
     include_dirs=[
         "./alephzero/include/",
@@ -21,7 +22,7 @@ module = Pybind11Extension(
 
 setup(
     name="alephzero",
-    version="0.3.9",
+    version="0.3.10",
     description="TODO: description",
     author="Leonid Shamis",
     author_email="leonid.shamis@gmail.com",

@@ -1,4 +1,5 @@
 import a0
+import contextlib
 import pytest
 import threading
 import time
@@ -101,3 +102,77 @@ async def test_aio_read():
     assert (await a0.aio_read_one(file, a0.INIT_MOST_RECENT)).payload == b"done"
 
     t.join()
+
+
+def test_read_zero_copy():
+    a0.File.remove("foo")
+    file = a0.File("foo")
+
+    w = a0.Writer(file)
+    w.write("aaa")
+    w.write("bbb")
+    w.write("ccc")
+
+    rszc = a0.ReaderSyncZeroCopy(file, a0.INIT_OLDEST, a0.ITER_NEXT)
+
+    class Want:
+        checked = False
+        payload = b""
+        off = 0
+        seq = 0
+
+    def callback(tlk, fpkt):
+        assert fpkt.payload == Want.payload
+        assert a0.FlatPacket(tlk.frame()).payload == Want.payload
+        assert tlk.frame().off == Want.off
+        assert tlk.frame().seq == Want.seq
+        Want.checked = True
+
+    @contextlib.contextmanager
+    def want_context(payload, off, seq):
+        Want.checked = False
+        Want.payload = payload
+        Want.off = off
+        Want.seq = seq
+        yield
+        assert Want.checked
+
+    with want_context(b"aaa", 144, 1):
+        rszc.read(callback)
+
+    with want_context(b"bbb", 240, 2):
+        rszc.read(callback)
+
+    with want_context(b"ccc", 336, 3):
+        rszc.read(callback)
+
+    with want_context(b"ccc", 336, 3):
+        a0.read_random_access(file, 336, callback)
+
+    @contextlib.contextmanager
+    def thread_sleep_write(pkt, timeout):
+
+        def sleep_write(pkt, timeout):
+            time.sleep(timeout)
+            w.write(pkt)
+
+        t = threading.Thread(target=sleep_write, args=(pkt, timeout))
+        t.start()
+        yield
+        t.join()
+
+    with want_context(b"ddd", 432, 4):
+        with thread_sleep_write("ddd", timeout=0.1):
+            rszc.read_blocking(callback)
+
+    with want_context(b"eee", 528, 5):
+        with thread_sleep_write("eee", timeout=0.1):
+            rszc.read_blocking(callback, timeout=0.2)
+
+    with want_context(b"fff", 624, 6):
+        with thread_sleep_write("fff", timeout=0.1):
+            rszc.read_blocking(callback, timeout=a0.TimeMono.now() + 0.2)
+
+    with thread_sleep_write("ggg", timeout=0.2):
+        with pytest.raises(RuntimeError, match="Connection timed out"):
+            rszc.read_blocking(callback, timeout=0.1)
