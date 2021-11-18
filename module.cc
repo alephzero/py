@@ -157,7 +157,9 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   py::class_<a0::FlatPacket>(m, "FlatPacket")
       .def(py::init([](const a0::Frame& frame) {
         // TODO(lshamis): Construct from memoryview instead of Frame.
-        return a0::FlatPacket{std::shared_ptr<a0_flat_packet_t>(new a0_flat_packet_t{{frame.data, frame.hdr.data_size}}, [](a0_flat_packet_t*) {})};
+        a0::FlatPacket fpkt;
+        fpkt.c = std::make_shared<a0_flat_packet_t>(a0_flat_packet_t{{frame.data, frame.hdr.data_size}});
+        return fpkt;
       }))
       .def_property_readonly("id", &a0::FlatPacket::id)
       .def_property_readonly("headers", [](a0::FlatPacket* self) {
