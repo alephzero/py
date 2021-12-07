@@ -205,31 +205,40 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def_static("parse", &a0::TimeWall::parse)
       .def("__str__", &a0::TimeWall::to_string);
 
-  py::class_<a0::TransportLocked>(m, "TransportLocked")
-      .def("empty", &a0::TransportLocked::empty)
-      .def("seq_low", &a0::TransportLocked::seq_low)
-      .def("seq_high", &a0::TransportLocked::seq_high)
-      .def("used_space", &a0::TransportLocked::used_space)
-      .def("resize", &a0::TransportLocked::resize)
-      .def("iter_valid", &a0::TransportLocked::iter_valid)
-      .def("frame", &a0::TransportLocked::frame)
-      .def("jump", &a0::TransportLocked::jump)
-      .def("jump_head", &a0::TransportLocked::jump_head)
-      .def("jump_tail", &a0::TransportLocked::jump_tail)
-      .def("has_next", &a0::TransportLocked::has_next)
-      .def("step_next", &a0::TransportLocked::step_next)
-      .def("has_prev", &a0::TransportLocked::has_prev)
-      .def("step_prev", &a0::TransportLocked::step_prev)
-      .def("alloc", &a0::TransportLocked::alloc)
-      .def("alloc_evicts", &a0::TransportLocked::alloc_evicts)
-      .def("commit", &a0::TransportLocked::commit)
+  py::class_<a0::TransportWriterLocked>(m, "TransportWriterLocked")
+      .def("empty", &a0::TransportWriterLocked::empty)
+      .def("seq_low", &a0::TransportWriterLocked::seq_low)
+      .def("seq_high", &a0::TransportWriterLocked::seq_high)
+      .def("used_space", &a0::TransportWriterLocked::used_space)
+      .def("resize", &a0::TransportWriterLocked::resize)
+      .def("alloc", &a0::TransportWriterLocked::alloc)
+      .def("alloc_evicts", &a0::TransportWriterLocked::alloc_evicts)
+      .def("commit", &a0::TransportWriterLocked::commit);
+
+  py::class_<a0::TransportWriter>(m, "TransportWriter")
+      .def(py::init<a0::Arena>())
+      .def("lock", &a0::TransportWriter::lock);
+
+  py::class_<a0::TransportReaderLocked>(m, "TransportReaderLocked")
+      .def("empty", &a0::TransportReaderLocked::empty)
+      .def("seq_low", &a0::TransportReaderLocked::seq_low)
+      .def("seq_high", &a0::TransportReaderLocked::seq_high)
+      .def("iter_valid", &a0::TransportReaderLocked::iter_valid)
+      .def("frame", &a0::TransportReaderLocked::frame)
+      .def("jump", &a0::TransportReaderLocked::jump)
+      .def("jump_head", &a0::TransportReaderLocked::jump_head)
+      .def("jump_tail", &a0::TransportReaderLocked::jump_tail)
+      .def("has_next", &a0::TransportReaderLocked::has_next)
+      .def("step_next", &a0::TransportReaderLocked::step_next)
+      .def("has_prev", &a0::TransportReaderLocked::has_prev)
+      .def("step_prev", &a0::TransportReaderLocked::step_prev)
       .def("wait",
-           &a0::TransportLocked::wait,
+           &a0::TransportReaderLocked::wait,
            py::call_guard<py::gil_scoped_release>(),
            py::arg("fn"))
       .def(
           "wait",
-          [](a0::TransportLocked* self, std::function<bool()> fn, a0::TimeMono timeout) {
+          [](a0::TransportReaderLocked* self, std::function<bool()> fn, a0::TimeMono timeout) {
             return self->wait_until(fn, timeout);
           },
           py::call_guard<py::gil_scoped_release>(),
@@ -237,16 +246,16 @@ PYBIND11_MODULE(alephzero_bindings, m) {
           py::arg("timeout"))
       .def(
           "wait",
-          [](a0::TransportLocked* self, std::function<bool()> fn, double timeout) {
+          [](a0::TransportReaderLocked* self, std::function<bool()> fn, double timeout) {
             return self->wait_for(fn, std::chrono::nanoseconds(uint64_t(1e9 * timeout)));
           },
           py::call_guard<py::gil_scoped_release>(),
           py::arg("fn"),
           py::arg("timeout"));
 
-  py::class_<a0::Transport>(m, "Transport")
+  py::class_<a0::TransportReader>(m, "TransportReader")
       .def(py::init<a0::Arena>())
-      .def("lock", &a0::Transport::lock);
+      .def("lock", &a0::TransportReader::lock);
 
   py::class_<a0::Middleware>(m, "Middleware");
   m.def("add_time_mono_header", &a0::add_time_mono_header);
@@ -278,12 +287,12 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def("can_read", &a0::ReaderSyncZeroCopy::can_read)
       .def("read", &a0::ReaderSyncZeroCopy::read)
       .def("read_blocking",
-           py::overload_cast<std::function<void(a0::TransportLocked, a0::FlatPacket)>>(&a0::ReaderSyncZeroCopy::read_blocking),
+           py::overload_cast<std::function<void(a0::TransportReaderLocked, a0::FlatPacket)>>(&a0::ReaderSyncZeroCopy::read_blocking),
            py::call_guard<py::gil_scoped_release>(),
            py::arg("fn"))
       .def(
           "read_blocking",
-          [](a0::ReaderSyncZeroCopy* self, std::function<void(a0::TransportLocked, a0::FlatPacket)> fn, a0::TimeMono timeout) {
+          [](a0::ReaderSyncZeroCopy* self, std::function<void(a0::TransportReaderLocked, a0::FlatPacket)> fn, a0::TimeMono timeout) {
             self->read_blocking(timeout, fn);
           },
           py::call_guard<py::gil_scoped_release>(),
@@ -291,7 +300,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
           py::arg("timeout"))
       .def(
           "read_blocking",
-          [](a0::ReaderSyncZeroCopy* self, std::function<void(a0::TransportLocked, a0::FlatPacket)> fn, double timeout) {
+          [](a0::ReaderSyncZeroCopy* self, std::function<void(a0::TransportReaderLocked, a0::FlatPacket)> fn, double timeout) {
             self->read_blocking(a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)), fn);
           },
           py::call_guard<py::gil_scoped_release>(),
@@ -319,7 +328,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init<a0::Arena,
                     a0::ReaderInit,
                     a0::ReaderIter,
-                    std::function<void(a0::TransportLocked, a0::FlatPacket)>>());
+                    std::function<void(a0::TransportReaderLocked, a0::FlatPacket)>>());
 
   py::class_<a0::Reader, nogil_holder<a0::Reader>>(m, "Reader")
       .def(py::init<a0::Arena,
