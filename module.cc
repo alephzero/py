@@ -262,19 +262,36 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def("push", &a0::Writer::push)
       .def("wrap", &a0::Writer::wrap);
 
-  py::enum_<a0::ReaderInit>(m, "ReaderInit")
-      .value("INIT_OLDEST", A0_INIT_OLDEST)
-      .value("INIT_MOST_RECENT", A0_INIT_MOST_RECENT)
-      .value("INIT_AWAIT_NEW", A0_INIT_AWAIT_NEW)
-      .export_values();
+  auto reader_py = py::class_<a0::Reader, nogil_holder<a0::Reader>>(m, "Reader");
 
-  py::enum_<a0::ReaderIter>(m, "ReaderIter")
-      .value("ITER_NEXT", A0_ITER_NEXT)
-      .value("ITER_NEWEST", A0_ITER_NEWEST)
+  auto reader_init_py = py::enum_<a0::Reader::Init>(m, "ReaderInit")
+      .value("INIT_OLDEST", a0::INIT_OLDEST)
+      .value("INIT_MOST_RECENT", a0::INIT_MOST_RECENT)
+      .value("INIT_AWAIT_NEW", a0::INIT_AWAIT_NEW)
       .export_values();
+  reader_py.attr("Init") = reader_init_py;
+
+  auto reader_iter_py = py::enum_<a0::Reader::Iter>(m, "ReaderIter")
+      .value("ITER_NEXT", a0::ITER_NEXT)
+      .value("ITER_NEWEST", a0::ITER_NEWEST)
+      .export_values();
+  reader_py.attr("Iter") = reader_iter_py;
+
+  py::class_<a0::Reader::Qos>(reader_py, "Qos")
+      .def(py::init<>())
+      .def(py::init<a0::Reader::Init>())
+      .def(py::init<a0::Reader::Iter>())
+      .def(py::init<a0::Reader::Init, a0::Reader::Iter>())
+      .def_property_readonly_static("DEFAULT", [](py::object) { return a0::Reader::Qos::DEFAULT; })
+      .def_readwrite("init", &a0::Reader::Qos::init)
+      .def_readwrite("iter", &a0::Reader::Qos::iter);
 
   py::class_<a0::ReaderSyncZeroCopy>(m, "ReaderSyncZeroCopy")
-      .def(py::init<a0::Arena, a0::ReaderInit, a0::ReaderIter>())
+      .def(py::init<a0::Arena>())
+      .def(py::init<a0::Arena, a0::Reader::Qos>())
+      .def(py::init<a0::Arena, a0::Reader::Init>())
+      .def(py::init<a0::Arena, a0::Reader::Iter>())
+      .def(py::init<a0::Arena, a0::Reader::Init, a0::Reader::Iter>())
       .def("can_read", &a0::ReaderSyncZeroCopy::can_read)
       .def("read", &a0::ReaderSyncZeroCopy::read)
       .def("read_blocking",
@@ -299,7 +316,11 @@ PYBIND11_MODULE(alephzero_bindings, m) {
           py::arg("timeout"));
 
   py::class_<a0::ReaderSync>(m, "ReaderSync")
-      .def(py::init<a0::Arena, a0::ReaderInit, a0::ReaderIter>())
+      .def(py::init<a0::Arena>())
+      .def(py::init<a0::Arena, a0::Reader::Qos>())
+      .def(py::init<a0::Arena, a0::Reader::Init>())
+      .def(py::init<a0::Arena, a0::Reader::Iter>())
+      .def(py::init<a0::Arena, a0::Reader::Init, a0::Reader::Iter>())
       .def("can_read", &a0::ReaderSync::can_read)
       .def("read", &a0::ReaderSync::read)
       .def("read_blocking",
@@ -317,14 +338,36 @@ PYBIND11_MODULE(alephzero_bindings, m) {
 
   py::class_<a0::ReaderZeroCopy, nogil_holder<a0::ReaderZeroCopy>>(m, "ReaderZeroCopy")
       .def(py::init<a0::Arena,
-                    a0::ReaderInit,
-                    a0::ReaderIter,
+                    std::function<void(a0::TransportLocked, a0::FlatPacket)>>())
+      .def(py::init<a0::Arena,
+                    a0::Reader::Qos,
+                    std::function<void(a0::TransportLocked, a0::FlatPacket)>>())
+      .def(py::init<a0::Arena,
+                    a0::Reader::Init,
+                    std::function<void(a0::TransportLocked, a0::FlatPacket)>>())
+      .def(py::init<a0::Arena,
+                    a0::Reader::Iter,
+                    std::function<void(a0::TransportLocked, a0::FlatPacket)>>())
+      .def(py::init<a0::Arena,
+                    a0::Reader::Init,
+                    a0::Reader::Iter,
                     std::function<void(a0::TransportLocked, a0::FlatPacket)>>());
 
-  py::class_<a0::Reader, nogil_holder<a0::Reader>>(m, "Reader")
+  reader_py
       .def(py::init<a0::Arena,
-                    a0::ReaderInit,
-                    a0::ReaderIter,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::Arena,
+                    a0::Reader::Qos,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::Arena,
+                    a0::Reader::Init,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::Arena,
+                    a0::Reader::Iter,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::Arena,
+                    a0::Reader::Init,
+                    a0::Reader::Iter,
                     std::function<void(a0::Packet)>>());
 
   m.def("read_random_access", &a0::read_random_access);
@@ -341,7 +384,11 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def("pub", py::overload_cast<a0::Packet>(&a0::Publisher::pub));
 
   py::class_<a0::SubscriberSync>(m, "SubscriberSync")
-      .def(py::init<a0::PubSubTopic, a0::ReaderInit, a0::ReaderIter>())
+      .def(py::init<a0::PubSubTopic>())
+      .def(py::init<a0::PubSubTopic, a0::Reader::Qos>())
+      .def(py::init<a0::PubSubTopic, a0::Reader::Init>())
+      .def(py::init<a0::PubSubTopic, a0::Reader::Iter>())
+      .def(py::init<a0::PubSubTopic, a0::Reader::Init, a0::Reader::Iter>())
       .def("can_read", &a0::SubscriberSync::can_read)
       .def("read", &a0::SubscriberSync::read)
       .def("read_blocking",
@@ -359,8 +406,19 @@ PYBIND11_MODULE(alephzero_bindings, m) {
 
   py::class_<a0::Subscriber, nogil_holder<a0::Subscriber>>(m, "Subscriber")
       .def(py::init<a0::PubSubTopic,
-                    a0::ReaderInit,
-                    a0::ReaderIter,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::PubSubTopic,
+                    a0::Reader::Qos,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::PubSubTopic,
+                    a0::Reader::Init,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::PubSubTopic,
+                    a0::Reader::Iter,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::PubSubTopic,
+                    a0::Reader::Init,
+                    a0::Reader::Iter,
                     std::function<void(a0::Packet)>>());
 
   py::class_<a0::RpcTopic>(m, "RpcTopic")
@@ -452,8 +510,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   py::class_<a0::LogListener, nogil_holder<a0::LogListener>>(m, "LogListener")
       .def(py::init<a0::LogTopic,
                     a0::LogLevel,
-                    a0::ReaderInit,
-                    a0::ReaderIter,
+                    a0::Reader::Qos,
                     std::function<void(a0::Packet)>>());
 
   py::class_<a0::CfgTopic>(m, "CfgTopic")
