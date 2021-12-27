@@ -46,7 +46,7 @@ jobs:
     - name: install apt deps
       run: apt update && apt install --no-install-recommends -y python3-pip
     - name: install pip deps
-      run: python3 -m pip install -U flake8 yapf[pyproject]
+      run: python3 -m pip install -U flake8 yapf toml
     - name: yapf
       run: python3 -m yapf -d -r -e alephzero .
     - name: flake8
