@@ -12,7 +12,7 @@ def test_pubsub():
     assert not os.path.exists("/dev/shm/alephzero/foo.pubsub.a0")
 
     p = a0.Publisher("foo")
-    ss = a0.SubscriberSync("foo", a0.INIT_OLDEST, a0.ITER_NEXT)
+    ss = a0.SubscriberSync("foo", a0.INIT_OLDEST)
     assert os.path.exists("/dev/shm/alephzero/foo.pubsub.a0")
 
     cv = threading.Condition()
@@ -25,7 +25,7 @@ def test_pubsub():
             State.payloads.append(pkt.payload)
             cv.notify()
 
-    s = a0.Subscriber("foo", a0.INIT_OLDEST, a0.ITER_NEXT, callback)
+    s = a0.Subscriber("foo", a0.INIT_OLDEST, callback)
 
     assert not ss.can_read()
     p.pub("hello")
@@ -97,7 +97,7 @@ async def test_aio_sub():
                                  a0.INIT_MOST_RECENT)).payload == b"keep going"
 
     cnt = 0
-    async for pkt in a0.aio_sub("foo", a0.INIT_OLDEST, a0.ITER_NEXT):
+    async for pkt in a0.aio_sub("foo", a0.INIT_OLDEST):
         cnt += 1
         assert pkt.payload in [b"keep going", b"done"]
         if pkt.payload == b"done":

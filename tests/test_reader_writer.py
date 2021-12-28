@@ -12,7 +12,7 @@ def test_reader_writer():
     file = a0.File("foo")
 
     w = a0.Writer(file)
-    rs = a0.ReaderSync(file, a0.INIT_OLDEST, a0.ITER_NEXT)
+    rs = a0.ReaderSync(file, a0.INIT_OLDEST)
 
     cv = threading.Condition()
 
@@ -24,7 +24,7 @@ def test_reader_writer():
             State.payloads.append(pkt.payload)
             cv.notify()
 
-    r = a0.Reader(file, a0.INIT_OLDEST, a0.ITER_NEXT, callback)
+    r = a0.Reader(file, a0.INIT_OLDEST, callback)
 
     assert not rs.can_read()
     w.write("hello")
@@ -92,7 +92,7 @@ async def test_aio_read():
                                   a0.INIT_MOST_RECENT)).payload == b"keep going"
 
     cnt = 0
-    async for pkt in a0.aio_read(file, a0.INIT_OLDEST, a0.ITER_NEXT):
+    async for pkt in a0.aio_read(file, a0.INIT_OLDEST):
         cnt += 1
         assert pkt.payload in [b"keep going", b"done"]
         if pkt.payload == b"done":
@@ -113,7 +113,7 @@ def test_read_zero_copy():
     w.write("bbb")
     w.write("ccc")
 
-    rszc = a0.ReaderSyncZeroCopy(file, a0.INIT_OLDEST, a0.ITER_NEXT)
+    rszc = a0.ReaderSyncZeroCopy(file, a0.INIT_OLDEST)
 
     class Want:
         checked = False
