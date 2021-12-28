@@ -509,8 +509,39 @@ PYBIND11_MODULE(alephzero_bindings, m) {
 
   py::class_<a0::LogListener, nogil_holder<a0::LogListener>>(m, "LogListener")
       .def(py::init<a0::LogTopic,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::LogTopic,
+                    a0::Reader::Qos,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::LogTopic,
+                    a0::Reader::Init,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::LogTopic,
+                    a0::Reader::Iter,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::LogTopic,
+                    a0::Reader::Init,
+                    a0::Reader::Iter,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::LogTopic,
+                    a0::LogLevel,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::LogTopic,
                     a0::LogLevel,
                     a0::Reader::Qos,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::LogTopic,
+                    a0::LogLevel,
+                    a0::Reader::Init,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::LogTopic,
+                    a0::LogLevel,
+                    a0::Reader::Iter,
+                    std::function<void(a0::Packet)>>())
+      .def(py::init<a0::LogTopic,
+                    a0::LogLevel,
+                    a0::Reader::Init,
+                    a0::Reader::Iter,
                     std::function<void(a0::Packet)>>());
 
   py::class_<a0::CfgTopic>(m, "CfgTopic")
