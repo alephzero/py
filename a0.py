@@ -155,30 +155,48 @@ class _aio_read_base:
             self._ns.cv.notify()
         return pkt
 
+    @staticmethod
+    def _make_qos(*args):
+        qos = Reader.Qos()
+        for arg in args:
+            if isinstance(arg, Reader.Qos):
+                qos = arg
+            elif isinstance(arg, Reader.Init):
+                qos.init = arg
+            elif isinstance(arg, Reader.Iter):
+                qos.iter = arg
+        return qos
 
-def aio_read(arena, init_, iter_, loop=None):
+
+def aio_read(arena, *args, qos=None, init_=None, iter_=None, loop=None):
+    qos = _aio_read_base._make_qos(*args, qos, init_, iter_)
 
     def factory(callback):
-        return Reader(arena, init_, iter_, callback)
+        return Reader(arena, qos, callback)
 
     return _aio_read_base(factory, loop)
 
 
-async def aio_read_one(arena, init_, loop=None):
-    async for pkt in aio_read(arena, init_, ITER_NEXT, loop):
+async def aio_read_one(arena, *args, qos=None, init_=None, loop=None):
+    qos = _aio_read_base._make_qos(*args, qos, init_)
+
+    async for pkt in aio_read(arena, qos, loop):
         return pkt
 
 
-def aio_sub(topic, init_, iter_, loop=None):
+def aio_sub(topic, *args, qos=None, init_=None, iter_=None, loop=None):
+    qos = _aio_read_base._make_qos(*args, qos, init_, iter_)
 
     def factory(callback):
-        return Subscriber(topic, init_, iter_, callback)
+        return Subscriber(topic, qos, callback)
 
     return _aio_read_base(factory, loop)
 
 
-async def aio_sub_one(topic, init_, loop=None):
-    async for pkt in aio_sub(topic, init_, ITER_NEXT, loop):
+async def aio_sub_one(topic, *args, qos=None, init_=None, loop=None):
+    qos = _aio_read_base._make_qos(*args, qos, init_)
+
+    async for pkt in aio_sub(topic, init_, qos, loop):
         return pkt
 
 
@@ -228,14 +246,16 @@ class RemoteSubscriber:
         self,
         remote_host,
         topic,
-        init_,
-        iter_,
         callback,
+        qos=None,
+        init_=None,
+        iter_=None,
         remote_port=24880,
         response_encoding="base64",
         scheduler="IMMEDIATE",
     ):
         addr = f"ws://{remote_host}:{remote_port}/wsapi/sub"
+        qos = _aio_read_base._make_qos(qos, init_, iter_)
         handshake = json.dumps(
             dict(
                 topic=topic,
@@ -243,11 +263,11 @@ class RemoteSubscriber:
                     INIT_AWAIT_NEW: "AWAIT_NEW",
                     INIT_MOST_RECENT: "MOST_RECENT",
                     INIT_OLDEST: "OLDEST",
-                }[init_],
+                }[qos.init],
                 iter={
                     ITER_NEXT: "NEXT",
                     ITER_NEWEST: "NEWEST",
-                }[iter_],
+                }[qos.iter],
                 response_encoding=response_encoding,
                 scheduler=scheduler,
             ))
