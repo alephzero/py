@@ -277,18 +277,18 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .export_values();
   reader_py.attr("Iter") = reader_iter_py;
 
-  py::class_<a0::Reader::Qos>(reader_py, "Qos")
+  py::class_<a0::Reader::Options>(reader_py, "Options")
       .def(py::init<>())
       .def(py::init<a0::Reader::Init>())
       .def(py::init<a0::Reader::Iter>())
       .def(py::init<a0::Reader::Init, a0::Reader::Iter>())
-      .def_property_readonly_static("DEFAULT", [](py::object) { return a0::Reader::Qos::DEFAULT; })
-      .def_readwrite("init", &a0::Reader::Qos::init)
-      .def_readwrite("iter", &a0::Reader::Qos::iter);
+      .def_property_readonly_static("DEFAULT", [](py::object) { return a0::Reader::Options::DEFAULT; })
+      .def_readwrite("init", &a0::Reader::Options::init)
+      .def_readwrite("iter", &a0::Reader::Options::iter);
 
   py::class_<a0::ReaderSyncZeroCopy>(m, "ReaderSyncZeroCopy")
       .def(py::init<a0::Arena>())
-      .def(py::init<a0::Arena, a0::Reader::Qos>())
+      .def(py::init<a0::Arena, a0::Reader::Options>())
       .def(py::init<a0::Arena, a0::Reader::Init>())
       .def(py::init<a0::Arena, a0::Reader::Iter>())
       .def(py::init<a0::Arena, a0::Reader::Init, a0::Reader::Iter>())
@@ -317,7 +317,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
 
   py::class_<a0::ReaderSync>(m, "ReaderSync")
       .def(py::init<a0::Arena>())
-      .def(py::init<a0::Arena, a0::Reader::Qos>())
+      .def(py::init<a0::Arena, a0::Reader::Options>())
       .def(py::init<a0::Arena, a0::Reader::Init>())
       .def(py::init<a0::Arena, a0::Reader::Iter>())
       .def(py::init<a0::Arena, a0::Reader::Init, a0::Reader::Iter>())
@@ -340,7 +340,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init<a0::Arena,
                     std::function<void(a0::TransportLocked, a0::FlatPacket)>>())
       .def(py::init<a0::Arena,
-                    a0::Reader::Qos,
+                    a0::Reader::Options,
                     std::function<void(a0::TransportLocked, a0::FlatPacket)>>())
       .def(py::init<a0::Arena,
                     a0::Reader::Init,
@@ -357,7 +357,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init<a0::Arena,
                     std::function<void(a0::Packet)>>())
       .def(py::init<a0::Arena,
-                    a0::Reader::Qos,
+                    a0::Reader::Options,
                     std::function<void(a0::Packet)>>())
       .def(py::init<a0::Arena,
                     a0::Reader::Init,
@@ -385,7 +385,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
 
   py::class_<a0::SubscriberSync>(m, "SubscriberSync")
       .def(py::init<a0::PubSubTopic>())
-      .def(py::init<a0::PubSubTopic, a0::Reader::Qos>())
+      .def(py::init<a0::PubSubTopic, a0::Reader::Options>())
       .def(py::init<a0::PubSubTopic, a0::Reader::Init>())
       .def(py::init<a0::PubSubTopic, a0::Reader::Iter>())
       .def(py::init<a0::PubSubTopic, a0::Reader::Init, a0::Reader::Iter>())
@@ -408,7 +408,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init<a0::PubSubTopic,
                     std::function<void(a0::Packet)>>())
       .def(py::init<a0::PubSubTopic,
-                    a0::Reader::Qos,
+                    a0::Reader::Options,
                     std::function<void(a0::Packet)>>())
       .def(py::init<a0::PubSubTopic,
                     a0::Reader::Init,
@@ -511,7 +511,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init<a0::LogTopic,
                     std::function<void(a0::Packet)>>())
       .def(py::init<a0::LogTopic,
-                    a0::Reader::Qos,
+                    a0::Reader::Options,
                     std::function<void(a0::Packet)>>())
       .def(py::init<a0::LogTopic,
                     a0::Reader::Init,
@@ -528,7 +528,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
                     std::function<void(a0::Packet)>>())
       .def(py::init<a0::LogTopic,
                     a0::LogLevel,
-                    a0::Reader::Qos,
+                    a0::Reader::Options,
                     std::function<void(a0::Packet)>>())
       .def(py::init<a0::LogTopic,
                     a0::LogLevel,

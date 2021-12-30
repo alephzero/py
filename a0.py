@@ -156,47 +156,47 @@ class _aio_read_base:
         return pkt
 
     @staticmethod
-    def _make_qos(*args):
-        qos = Reader.Qos()
+    def _make_opts(*args):
+        opts = Reader.Options()
         for arg in args:
-            if isinstance(arg, Reader.Qos):
-                qos = arg
+            if isinstance(arg, Reader.Options):
+                opts = arg
             elif isinstance(arg, Reader.Init):
-                qos.init = arg
+                opts.init = arg
             elif isinstance(arg, Reader.Iter):
-                qos.iter = arg
-        return qos
+                opts.iter = arg
+        return opts
 
 
-def aio_read(arena, *args, qos=None, init_=None, iter_=None, loop=None):
-    qos = _aio_read_base._make_qos(*args, qos, init_, iter_)
+def aio_read(arena, *args, opts=None, init_=None, iter_=None, loop=None):
+    opts = _aio_read_base._make_opts(*args, opts, init_, iter_)
 
     def factory(callback):
-        return Reader(arena, qos, callback)
+        return Reader(arena, opts, callback)
 
     return _aio_read_base(factory, loop)
 
 
-async def aio_read_one(arena, *args, qos=None, init_=None, loop=None):
-    qos = _aio_read_base._make_qos(*args, qos, init_)
+async def aio_read_one(arena, *args, opts=None, init_=None, loop=None):
+    opts = _aio_read_base._make_opts(*args, opts, init_)
 
-    async for pkt in aio_read(arena, qos, loop):
+    async for pkt in aio_read(arena, opts, loop):
         return pkt
 
 
-def aio_sub(topic, *args, qos=None, init_=None, iter_=None, loop=None):
-    qos = _aio_read_base._make_qos(*args, qos, init_, iter_)
+def aio_sub(topic, *args, opts=None, init_=None, iter_=None, loop=None):
+    opts = _aio_read_base._make_opts(*args, opts, init_, iter_)
 
     def factory(callback):
-        return Subscriber(topic, qos, callback)
+        return Subscriber(topic, opts, callback)
 
     return _aio_read_base(factory, loop)
 
 
-async def aio_sub_one(topic, *args, qos=None, init_=None, loop=None):
-    qos = _aio_read_base._make_qos(*args, qos, init_)
+async def aio_sub_one(topic, *args, opts=None, init_=None, loop=None):
+    opts = _aio_read_base._make_opts(*args, opts, init_)
 
-    async for pkt in aio_sub(topic, init_, qos, loop):
+    async for pkt in aio_sub(topic, init_, opts, loop):
         return pkt
 
 
@@ -247,7 +247,7 @@ class RemoteSubscriber:
         remote_host,
         topic,
         callback,
-        qos=None,
+        opts=None,
         init_=None,
         iter_=None,
         remote_port=24880,
@@ -255,7 +255,7 @@ class RemoteSubscriber:
         scheduler="IMMEDIATE",
     ):
         addr = f"ws://{remote_host}:{remote_port}/wsapi/sub"
-        qos = _aio_read_base._make_qos(qos, init_, iter_)
+        opts = _aio_read_base._make_opts(opts, init_, iter_)
         handshake = json.dumps(
             dict(
                 topic=topic,
@@ -263,11 +263,11 @@ class RemoteSubscriber:
                     INIT_AWAIT_NEW: "AWAIT_NEW",
                     INIT_MOST_RECENT: "MOST_RECENT",
                     INIT_OLDEST: "OLDEST",
-                }[qos.init],
+                }[opts.init],
                 iter={
                     ITER_NEXT: "NEXT",
                     ITER_NEWEST: "NEWEST",
-                }[qos.iter],
+                }[opts.iter],
                 response_encoding=response_encoding,
                 scheduler=scheduler,
             ))
