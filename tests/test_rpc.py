@@ -56,3 +56,5 @@ def test_rpc():
     assert reply.payload == b"slept"
     with pytest.raises(RuntimeError, match="Connection timed out"):
         client.send_blocking("sleep", timeout=a0.TimeMono.now() + 0.1)
+
+    assert client.send_fut("reply").result().payload == b"reply"
