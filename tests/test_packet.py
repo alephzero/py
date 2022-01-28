@@ -24,3 +24,8 @@ def test_packet():
     assert pkt.payload == b"Hello, World!"
 
     assert pkt.payload_view == b"Hello, World!"
+
+
+def test_packet_keep_alive():
+    pkt = a0.Packet(b"\0" * (512 * 1024))
+    assert pkt.payload[1024] == 0
