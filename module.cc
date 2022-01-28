@@ -107,7 +107,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def(py::init([](py::bytes payload) {
              return a0::Packet(as_string_view(payload), a0::ref);
            }),
-           py::keep_alive<0, 1>())
+           py::keep_alive<1, 2>())
       .def(py::init([](std::vector<std::pair<std::string, std::string>> hdrs,
                        py::bytes payload) {
              std::unordered_multimap<std::string, std::string> hdrs_map;
@@ -116,11 +116,11 @@ PYBIND11_MODULE(alephzero_bindings, m) {
              }
              return a0::Packet(std::move(hdrs_map), as_string_view(payload), a0::ref);
            }),
-           py::keep_alive<0, 2>())
+           py::keep_alive<1, 3>())
       .def(py::init([](py::str payload) {
              return a0::Packet(as_string_view(payload), a0::ref);
            }),
-           py::keep_alive<0, 1>())
+           py::keep_alive<1, 2>())
       .def(py::init([](std::vector<std::pair<std::string, std::string>> hdrs, py::str payload) {
              std::unordered_multimap<std::string, std::string> hdrs_map;
              for (auto& hdr : hdrs) {
@@ -128,7 +128,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
              }
              return a0::Packet(std::move(hdrs_map), as_string_view(payload), a0::ref);
            }),
-           py::keep_alive<0, 2>())
+           py::keep_alive<1, 3>())
       .def_property_readonly("id", &a0::Packet::id)
       .def_property_readonly("headers", [](a0::Packet* self) {
         std::vector<std::pair<std::string, std::string>> ret;
