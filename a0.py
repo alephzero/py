@@ -1,6 +1,7 @@
 from alephzero_bindings import *
 import asyncio
 import base64
+import concurrent.futures
 import json
 import jsonpointer
 import threading
@@ -109,6 +110,19 @@ def update_configs():
                 del obj[tid]
         cfg.registry = next_reg
 
+
+################
+# Nice-to-Have #
+################
+
+
+def _rcp_client_send_fut(client, *args):
+    fut = concurrent.futures.Future()
+    client.send(*args, lambda pkt: fut.set_result(pkt))
+    return fut
+
+
+RpcClient.send_fut = _rcp_client_send_fut
 
 ###########
 # AsyncIO #
@@ -233,6 +247,89 @@ class AioRpcClient:
         self._client.send(pkt, callback)
 
         return await ns.fut
+
+
+##############
+# Decorators #
+##############
+
+
+class dec:
+
+    class Entry:
+
+        def __init__(self, fn, topic, factory):
+            self.fn = fn
+            self.topic = topic
+            self.factory = factory
+            self._obj = None
+
+        def running(self):
+            return self._obj is not None
+
+        def start(self):
+            if self.running():
+                return
+            self._obj = self.factory()
+
+        def stop(self):
+            self._obj = None
+
+    registry = []
+
+    @staticmethod
+    def start_all():
+        for entry in dec.registry:
+            entry.start()
+
+    @staticmethod
+    def stop_all():
+        for entry in dec.registry:
+            entry.stop()
+
+    # Example:
+    #
+    # @a0.dec.sub("foo")
+    # def foo(pkt):
+    #     ...
+    @staticmethod
+    def sub(*args, topic=None, opts=None, init_=None, iter_=None):
+        if topic is None and args and type(args[0]) is str:
+            topic = args[0]
+
+        def decorator(fn):
+            topic_ = topic or fn.__name__
+            opts_ = _aio_read_base._make_opts(opts, init_, iter_)
+            dec.registry.append(
+                dec.Entry(fn, topic_, lambda: Subscriber(topic_, opts_, fn)))
+            return fn
+
+        if len(args) == 1 and callable(args[0]):
+            return decorator(args[0])
+
+        return decorator
+
+    # Example:
+    #
+    # @a0.dec.rpc("foo")
+    # def foo(req):
+    #     ...
+    #     return resp
+    @staticmethod
+    def rpc(*args, topic=None):
+        if topic is None and args and type(args[0]) is str:
+            topic = args[0]
+
+        def decorator(fn):
+            topic_ = topic or fn.__name__
+            dec.registry.append(
+                dec.Entry(fn, topic_, lambda: RpcServer(topic_, fn, None)))
+            return fn
+
+        if len(args) == 1 and callable(args[0]):
+            return decorator(args[0])
+
+        return decorator
 
 
 ##########
