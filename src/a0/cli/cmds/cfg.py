@@ -4,19 +4,22 @@ import glob
 import json
 import jsonpointer
 import os
-import sys
+
 
 @click.group()
 def cli():
     pass
 
+
 @cli.command()
 def ls():
-    files = glob.glob(os.path.join(a0.env.root(), "**/*.cfg.a0"), recursive=True)
+    files = glob.glob(os.path.join(a0.env.root(), "**/*.cfg.a0"),
+                      recursive=True)
     for file in files:
         file = os.path.relpath(file, a0.env.root())
         file = file[:-len(".cfg.a0")]
         print(file)
+
 
 @cli.command()
 @click.argument("topic")
@@ -26,7 +29,7 @@ def ls():
 def echo(topic, key, format):
     try:
         cfg = json.loads(a0.Cfg(topic).read().payload)
-    except:
+    except Exception:
         cfg = {}
 
     if key:
@@ -45,6 +48,7 @@ def echo(topic, key, format):
         cfg = queried_cfg
 
     if format == "list":
+
         def walk(prefix, node):
             for key, val in node.items():
                 name = f"{prefix}/{key}"
@@ -52,9 +56,11 @@ def echo(topic, key, format):
                     walk(name, val)
                 else:
                     print(f'"{name}" = {json.dumps(val)}')
+
         walk("", cfg)
     elif format == "json":
         print(json.dumps(cfg, indent=2))
+
 
 @cli.command()
 @click.argument("topic")
@@ -64,7 +70,7 @@ def set(topic, kv):
     for key, val in kv.items():
         try:
             val = json.loads(val)
-        except:
+        except TypeError:
             pass
 
         mergepatch = {key: val}
@@ -75,6 +81,7 @@ def set(topic, kv):
                 mergepatch = {part: mergepatch}
 
         a0.Cfg(topic).mergepatch(mergepatch)
+
 
 @cli.command()
 @click.argument("topic")

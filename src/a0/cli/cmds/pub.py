@@ -2,6 +2,7 @@ import a0
 import click
 import sys
 
+
 @click.command()
 @click.argument("topic")
 @click.option("--header", "-h", multiple=True)
@@ -12,11 +13,13 @@ import sys
 def cli(topic, header, value, file, stdin, empty):
     selected = [opt for opt in [value, file, stdin, empty] if opt]
     if not selected:
-        print(f"One of value, file, stdin, and empty are required", file=sys.stderr)
+        print("One of value, file, stdin, and empty are required",
+              file=sys.stderr)
         sys.exit(-1)
 
     if len(selected) > 1:
-        print(f"value, file, stdin, and empty are mutually exclusive", file=sys.stderr)
+        print("value, file, stdin, and empty are mutually exclusive",
+              file=sys.stderr)
         sys.exit(-1)
 
     header = list(kv.split("=", 1) for kv in header)

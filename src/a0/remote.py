@@ -118,4 +118,3 @@ class RemoteSubscriber:
                 self._state.ws.close()
             self._state.cv.notify()
         self._thread.join()
-

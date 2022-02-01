@@ -46,7 +46,6 @@ class _aio_read_base:
         return pkt
 
 
-
 def aio_read(arena, *args, opts=None, init_=None, iter_=None, loop=None):
     opts = make_opts(*args, opts, init_, iter_)
 
