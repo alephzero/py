@@ -1,6 +1,5 @@
 import a0
 import click
-import os
 import signal
 import sys
 
