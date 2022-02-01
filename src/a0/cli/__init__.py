@@ -16,9 +16,18 @@ def cli():
 
 
 def main():
-    for cmd_res in pkg_resources.iter_entry_points("a0.cli.cmds"):
-        cmd = cmd_res.load()
-        cli.add_command(cmd.cli, cmd_res.name)
+    known_cmds = set()
+
+    def add_cmd(name, module):
+        if name in known_cmds:
+            fail(f"multiple commands named '{name}'")
+        known_cmds.add(name)
+        if not hasattr(module, "cli"):
+            fail(f"no cli entry point in '{name}'")
+        cli.add_command(module.cli, name)
+
+    for cmd in pkg_resources.iter_entry_points("a0.cli.cmds"):
+        add_cmd(cmd.name, cmd.load())
 
     def load_cmds_from(dirpath):
         for filename in os.listdir(dirpath):
@@ -26,15 +35,17 @@ def main():
             if name.startswith("_") or ext != ".py":
                 continue
             filepath = os.path.join(dirpath, filename)
-            cmd = SourceFileLoader(name, filepath).load_module()
-            cli.add_command(cmd.cli, name)
+            add_cmd(name, SourceFileLoader(name, filepath).load_module())
 
     env_path = os.environ.get("A0_CLI_CMDS_PATH")
     if env_path:
-        env_path = os.path.expanduser(env_path)
-        if not os.path.exists(env_path):
-            fail(f"Path doesn't exist: Env['A0_CLI_CMDS_PATH']='{env_path}'")
-        load_cmds_from(env_path)
+        for i, path in enumerate(env_path.split(":")):
+            path = os.path.expanduser(path)
+            if not os.path.exists(path):
+                fail(
+                    f"Path doesn't exist: Env['A0_CLI_CMDS_PATH'][{i}]='{path}'"
+                )
+            load_cmds_from(path)
 
     local_path = os.path.expanduser("~/.config/alephzero/cli/cmds/")
     if os.path.exists(local_path):
