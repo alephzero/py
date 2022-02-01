@@ -26,11 +26,11 @@ def cli(topic, init, iter, delim):
     init = getattr(a0.ReaderInit, init.upper())
     iter = getattr(a0.ReaderIter, iter.upper())
 
-    sep = b""
-    if delim == "null":
-        sep = b"\0"
-    elif delim == "newline":
-        sep = b"\n"
+    sep = {
+        "empty": b"",
+        "null": b"\0",
+        "newline": b"\n",
+    }[delim]
 
     def onpkt(pkt):
         sys.stdout.buffer.write(pkt.payload)
