@@ -1,6 +1,8 @@
 import a0
 import click
+import os
 import signal
+import sys
 
 
 @click.command()
@@ -13,13 +15,27 @@ import signal
               type=click.Choice(list(a0.ReaderIter.__members__),
                                 case_sensitive=False),
               default=a0.ReaderIter.NEXT.name)
-def cli(topic, init, iter):
-    """Echo the messages logged on the given topic."""
+@click.option("--delim",
+              type=click.Choice(["empty", "null", "newline"],
+                                case_sensitive=False),
+              default="newline")
+def cli(topic, init, iter, delim):
+    """Echo the messages published on the given topic."""
     init = getattr(a0.ReaderInit, init.upper())
     iter = getattr(a0.ReaderIter, iter.upper())
 
-    s = a0.Subscriber(topic, init, iter,
-                      lambda pkt: print(pkt.payload.decode()))
+    sep = b""
+    if delim == "null":
+        sep = b"\0"
+    elif delim == "newline":
+        sep = b"\n"
+
+    def onpkt(pkt):
+        sys.stdout.buffer.write(pkt.payload)
+        sys.stdout.buffer.write(sep)
+        sys.stdout.flush()
+
+    s = a0.Subscriber(topic, init, iter, onpkt)
 
     # Remove click SIGINT handler.
     signal.signal(signal.SIGINT, lambda *args: None)
