@@ -32,15 +32,18 @@ def ls():
 @click.option("--level",
               type=click.Choice(list(a0.LogLevel.__members__),
                                 case_sensitive=False),
-              default=a0.LogLevel.INFO.name)
+              default=a0.LogLevel.INFO.name,
+              show_default=True)
 @click.option("--init",
               type=click.Choice(list(a0.ReaderInit.__members__),
                                 case_sensitive=False),
-              default=a0.ReaderInit.AWAIT_NEW.name)
+              default=a0.ReaderInit.AWAIT_NEW.name,
+              show_default=True)
 @click.option("--iter",
               type=click.Choice(list(a0.ReaderIter.__members__),
                                 case_sensitive=False),
-              default=a0.ReaderIter.NEXT.name)
+              default=a0.ReaderIter.NEXT.name,
+              show_default=True)
 def echo(topic, level, init, iter):
     """Echo the messages logged on the given topic."""
     level = getattr(a0.LogLevel, level.upper())

@@ -9,15 +9,18 @@ import sys
 @click.option("--init",
               type=click.Choice(list(a0.ReaderInit.__members__),
                                 case_sensitive=False),
-              default=a0.ReaderInit.AWAIT_NEW.name)
+              default=a0.ReaderInit.AWAIT_NEW.name,
+              show_default=True)
 @click.option("--iter",
               type=click.Choice(list(a0.ReaderIter.__members__),
                                 case_sensitive=False),
-              default=a0.ReaderIter.NEXT.name)
+              default=a0.ReaderIter.NEXT.name,
+              show_default=True)
 @click.option("--delim",
               type=click.Choice(["empty", "null", "newline"],
                                 case_sensitive=False),
-              default="newline")
+              default="newline",
+              show_default=True)
 def cli(topic, init, iter, delim):
     """Echo the messages published on the given topic."""
     init = getattr(a0.ReaderInit, init.upper())

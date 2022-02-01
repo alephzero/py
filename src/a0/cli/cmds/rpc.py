@@ -1,5 +1,6 @@
 import a0
 import click
+import signal
 import sys
 
 
@@ -9,8 +10,9 @@ import sys
 @click.option("--header", "-h", multiple=True)
 @click.option("--file", "-f", is_flag=True)
 @click.option("--stdin", is_flag=True)
-def cli(topic, value, header, file, stdin):
-    """Publish a message on a given topic."""
+@click.option("--timeout", type=float)
+def cli(topic, value, header, file, stdin, timeout):
+    """Send an rpc on a given topic."""
     if file and stdin:
         print("file and stdin are mutually exclusive", file=sys.stderr)
         sys.exit(-1)
@@ -24,4 +26,15 @@ def cli(topic, value, header, file, stdin):
     else:
         payload = value
 
-    a0.Publisher(topic).pub(a0.Packet(header, payload))
+    client = a0.RpcClient(topic)
+    req = a0.Packet(header, payload)
+
+    try:
+        if timeout:
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            reply = client.send_blocking(req, timeout=timeout)
+        else:
+            reply = client.send_blocking(req)
+        sys.stdout.buffer.write(reply.payload)
+    except Exception:
+        client.cancel(req.id)

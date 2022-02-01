@@ -42,6 +42,7 @@ setuptools.setup(name="alephzero",
                          "log = a0.cli.cmds.log",
                          "pub = a0.cli.cmds.pub",
                          "pubsub = a0.cli.cmds.pubsub",
+                         "rpc = a0.cli.cmds.rpc",
                          "sub = a0.cli.cmds.sub",
                      ],
                  })
