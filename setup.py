@@ -39,6 +39,7 @@ setuptools.setup(name="alephzero",
                      "console_scripts": ["a0 = a0.cli:main"],
                      "a0.cli.cmds": [
                          "cfg = a0.cli.cmds.cfg",
+                         "log = a0.cli.cmds.log",
                          "pub = a0.cli.cmds.pub",
                      ],
                  })

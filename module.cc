@@ -47,8 +47,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   py::enum_<a0_arena_mode_t>(pyarena, "Mode")
       .value("SHARED", A0_ARENA_MODE_SHARED)
       .value("EXCLUSIVE", A0_ARENA_MODE_EXCLUSIVE)
-      .value("READONLY", A0_ARENA_MODE_READONLY)
-      .export_values();
+      .value("READONLY", A0_ARENA_MODE_READONLY);
 
   pyarena
       .def(py::init([](a0::File file) { return a0::Arena(file); }))
@@ -223,6 +222,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def("alloc", &a0::TransportLocked::alloc)
       .def("alloc_evicts", &a0::TransportLocked::alloc_evicts)
       .def("commit", &a0::TransportLocked::commit)
+      .def("clear", &a0::TransportLocked::clear)
       .def("wait",
            &a0::TransportLocked::wait,
            py::call_guard<py::gil_scoped_release>(),
@@ -265,17 +265,20 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   auto reader_py = py::class_<a0::Reader, nogil_holder<a0::Reader>>(m, "Reader");
 
   auto reader_init_py = py::enum_<a0::Reader::Init>(m, "ReaderInit")
-      .value("INIT_OLDEST", a0::INIT_OLDEST)
-      .value("INIT_MOST_RECENT", a0::INIT_MOST_RECENT)
-      .value("INIT_AWAIT_NEW", a0::INIT_AWAIT_NEW)
-      .export_values();
+      .value("OLDEST", a0::INIT_OLDEST)
+      .value("MOST_RECENT", a0::INIT_MOST_RECENT)
+      .value("AWAIT_NEW", a0::INIT_AWAIT_NEW);
   reader_py.attr("Init") = reader_init_py;
+  m.attr("INIT_OLDEST") = reader_init_py.attr("OLDEST");
+  m.attr("INIT_MOST_RECENT") = reader_init_py.attr("MOST_RECENT");
+  m.attr("INIT_AWAIT_NEW") = reader_init_py.attr("AWAIT_NEW");
 
   auto reader_iter_py = py::enum_<a0::Reader::Iter>(m, "ReaderIter")
-      .value("ITER_NEXT", a0::ITER_NEXT)
-      .value("ITER_NEWEST", a0::ITER_NEWEST)
-      .export_values();
+      .value("NEXT", a0::ITER_NEXT)
+      .value("NEWEST", a0::ITER_NEWEST);
   reader_py.attr("Iter") = reader_iter_py;
+  m.attr("ITER_NEXT") = reader_iter_py.attr("NEXT");
+  m.attr("ITER_NEWEST") = reader_iter_py.attr("NEWEST");
 
   py::class_<a0::Reader::Options>(reader_py, "Options")
       .def(py::init<>())
@@ -495,8 +498,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .value("INFO", a0::LogLevel::INFO)
       .value("DBG", a0::LogLevel::DBG)
       .value("MIN", a0::LogLevel::MIN)
-      .value("MAX", a0::LogLevel::MAX)
-      .export_values();
+      .value("MAX", a0::LogLevel::MAX);
 
   py::class_<a0::Logger>(m, "Logger")
       .def(py::init<a0::LogTopic>())

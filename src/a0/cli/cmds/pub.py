@@ -11,6 +11,7 @@ import sys
 @click.option("--stdin", is_flag=True)
 @click.option("--empty", is_flag=True)
 def cli(topic, header, value, file, stdin, empty):
+    """Publish a message on a given topic."""
     selected = [opt for opt in [value, file, stdin, empty] if opt]
     if not selected:
         print("One of value, file, stdin, and empty are required",

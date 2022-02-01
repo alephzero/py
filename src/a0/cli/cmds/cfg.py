@@ -13,6 +13,7 @@ def cli():
 
 @cli.command()
 def ls():
+    """List all topics with configs."""
     files = glob.glob(os.path.join(a0.env.root(), "**/*.cfg.a0"),
                       recursive=True)
     for file in files:
@@ -27,6 +28,7 @@ def ls():
 @click.option("--json", "format", flag_value="json", default=True)
 @click.option("--list", "format", flag_value="list")
 def echo(topic, key, format):
+    """Echo the config for the given topic and keys."""
     try:
         cfg = json.loads(a0.Cfg(topic).read().payload)
     except Exception:
@@ -66,6 +68,7 @@ def echo(topic, key, format):
 @click.argument("topic")
 @click.argument("kv", nargs=-1)
 def set(topic, kv):
+    """Set the config for the given topic and keys."""
     kv = dict([arg.split("=", 1) for arg in kv])
     for key, val in kv.items():
         try:
@@ -87,6 +90,7 @@ def set(topic, kv):
 @click.argument("topic")
 @click.argument("key", nargs=-1)
 def clear(topic, key):
+    """Clear the config for the given topic and keys."""
     if not key:
         a0.Cfg(topic).write("{}")
         return
