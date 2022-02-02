@@ -73,7 +73,7 @@ def set(topic, kv):
     for key, val in kv.items():
         try:
             val = json.loads(val)
-        except TypeError:
+        except Exception:
             pass
 
         mergepatch = {key: val}
@@ -96,9 +96,9 @@ def clear(topic, key):
         return
 
     for k in key:
-        mergepatch = {key: None}
-        if key[0] == "/":
-            parts = key.split("/")
+        mergepatch = {k: None}
+        if k[0] == "/":
+            parts = k.split("/")
             mergepatch = {parts[-1]: None}
             for part in parts[1:-1][::-1]:
                 mergepatch = {part: mergepatch}
