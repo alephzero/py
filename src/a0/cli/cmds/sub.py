@@ -32,14 +32,21 @@ def cli(topic, init, iter, delim):
         "newline": b"\n",
     }[delim]
 
-    def onpkt(pkt):
-        sys.stdout.buffer.write(pkt.payload)
-        sys.stdout.buffer.write(sep)
-        sys.stdout.flush()
-
-    s = a0.Subscriber(topic, init, iter, onpkt)
-
     # Remove click SIGINT handler.
-    signal.signal(signal.SIGINT, lambda *args: None)
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    class State:
+        sub = None
+
+    def onpkt(pkt):
+        try:
+            sys.stdout.buffer.write(pkt.payload)
+            sys.stdout.buffer.write(sep)
+            sys.stdout.flush()
+        except BrokenPipeError:
+            State.sub = None
+
+    State.sub = a0.Subscriber(topic, init, iter, onpkt)
+
     # Wait for SIGINT (ctrl+c).
     signal.pause()

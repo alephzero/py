@@ -50,11 +50,12 @@ def echo(topic, level, init, iter):
     init = getattr(a0.ReaderInit, init.upper())
     iter = getattr(a0.ReaderIter, iter.upper())
 
+    # Remove click SIGINT handler.
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
     ll = a0.LogListener(topic, level, init, iter,
                         lambda pkt: print(pkt.payload.decode()))
 
-    # Remove click SIGINT handler.
-    signal.signal(signal.SIGINT, lambda *args: None)
     # Wait for SIGINT (ctrl+c).
     signal.pause()
 
