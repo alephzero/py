@@ -2,10 +2,11 @@ import a0
 import click
 import signal
 import sys
+from . import _util
 
 
 @click.command()
-@click.argument("topic")
+@click.argument("topic", shell_complete=_util.autocomplete_topics("pubsub"))
 @click.option("--init",
               type=click.Choice(list(a0.ReaderInit.__members__),
                                 case_sensitive=False),
