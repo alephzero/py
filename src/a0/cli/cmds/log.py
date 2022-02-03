@@ -1,14 +1,7 @@
 import a0
 import click
-import glob
-import os
 import signal
-import sys
-
-
-def fail(msg):
-    print(msg, file=sys.stderr)
-    sys.exit(-1)
+from . import _util
 
 
 @click.group()
@@ -19,16 +12,12 @@ def cli():
 @cli.command()
 def ls():
     """List all topics with logs."""
-    files = glob.glob(os.path.join(a0.env.root(), "**/*.log.a0"),
-                      recursive=True)
-    for file in files:
-        file = os.path.relpath(file, a0.env.root())
-        file = file[:-len(".log.a0")]
-        print(file)
+    for topic in _util.detect_topics("log"):
+        print(topic)
 
 
 @cli.command()
-@click.argument("topic")
+@click.argument("topic", shell_complete=_util.autocomplete_topics("log"))
 @click.option("--level",
               type=click.Choice(list(a0.LogLevel.__members__),
                                 case_sensitive=False),
@@ -61,7 +50,7 @@ def echo(topic, level, init, iter):
 
 
 @cli.command()
-@click.argument("topic")
+@click.argument("topic", shell_complete=_util.autocomplete_topics("log"))
 def clear(topic):
     """Clear the log history for the given topic."""
     t = a0.Transport(a0.File(f"{topic}.log.a0"))

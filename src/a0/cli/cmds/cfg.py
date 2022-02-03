@@ -1,9 +1,8 @@
 import a0
 import click
-import glob
 import json
 import jsonpointer
-import os
+from . import _util
 
 
 @click.group()
@@ -14,16 +13,12 @@ def cli():
 @cli.command()
 def ls():
     """List all topics with configs."""
-    files = glob.glob(os.path.join(a0.env.root(), "**/*.cfg.a0"),
-                      recursive=True)
-    for file in files:
-        file = os.path.relpath(file, a0.env.root())
-        file = file[:-len(".cfg.a0")]
-        print(file)
+    for topic in _util.detect_topics("cfg"):
+        print(topic)
 
 
 @cli.command()
-@click.argument("topic")
+@click.argument("topic", shell_complete=_util.autocomplete_topics("cfg"))
 @click.argument("key", nargs=-1)
 @click.option("--json", "format", flag_value="json", default=True)
 @click.option("--list", "format", flag_value="list")
@@ -65,7 +60,7 @@ def echo(topic, key, format):
 
 
 @cli.command()
-@click.argument("topic")
+@click.argument("topic", shell_complete=_util.autocomplete_topics("cfg"))
 @click.argument("kv", nargs=-1)
 def set(topic, kv):
     """Set the config for the given topic and keys."""
@@ -87,7 +82,7 @@ def set(topic, kv):
 
 
 @cli.command()
-@click.argument("topic")
+@click.argument("topic", shell_complete=_util.autocomplete_topics("cfg"))
 @click.argument("key", nargs=-1)
 def clear(topic, key):
     """Clear the config for the given topic and keys."""

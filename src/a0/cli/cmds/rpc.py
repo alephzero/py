@@ -2,10 +2,11 @@ import a0
 import click
 import signal
 import sys
+from . import _util
 
 
 @click.command()
-@click.argument("topic")
+@click.argument("topic", shell_complete=_util.autocomplete_topics("rpc"))
 @click.argument("value")
 @click.option("--header", "-h", multiple=True)
 @click.option("--file", "-f", is_flag=True)
