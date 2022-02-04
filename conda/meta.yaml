@@ -1,0 +1,25 @@
+package:
+  name: alephzero
+  version: 0.3.11
+
+source:
+  path: ..
+
+build:
+  script: python -m pip install .
+
+requirements:
+  host:
+    - python
+    - {{ compiler('cxx') }}
+    - make
+    - pybind11
+    - sysroot_linux-64>=2.17
+  run:
+    - python
+    - jsonpointer>=2.1
+    - websocket-client>=1.2.1
+
+test:
+  imports:
+    - a0
