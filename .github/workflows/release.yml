@@ -31,7 +31,7 @@ jobs:
 
       - name: Archive Source
         run: |
-          tar -czvf alephzero-${GITHUB_REF#refs/tags/}.tar.gz
+          tar -czvf alephzero-${GITHUB_REF#refs/tags/}.tar.gz .
           ls -l alephzero-${GITHUB_REF#refs/tags/}.tar.gz
 
       # - name: Create Release
