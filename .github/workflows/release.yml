@@ -20,19 +20,32 @@ jobs:
 
       - name: Remove Unused Code
         run: |
+          cp -r . /tmp/dist
+          echo "INIT"
+          du -sh /tmp/dist
           # Save ~396MB removing unused third_party.
-          rm -rf ./alephzero/third_party/doctest ./alephzero/third_party/json ./alephzero/third_party/picobench
+          rm -rf /tmp/dist/alephzero/third_party/doctest /tmp/dist/alephzero/third_party/json /tmp/dist/alephzero/third_party/picobench
+          echo "NO 3"
+          du -sh /tmp/dist
           # We've removed doctest and picobench, so no point keeping C++ unit tests.
-          rm -rf ./alephzero/src/bench ./alephzero/src/test
+          rm -rf /tmp/dist/alephzero/src/bench /tmp/dist/alephzero/src/test
+          echo "NO T"
+          du -sh /tmp/dist
           # Save ~184MB dropping git history.
-          rm -rf ./.git alephzero/.git alephzero/third_party/yyjson/.git
+          rm -rf /tmp/dist/.git alephzero/.git alephzero/third_party/yyjson/.git
+          echo "NO G"
+          du -sh /tmp/dist
           # Save ~5MB dropping yyjson/test.
-          rm -rf ./alephzero/third_party/yyjson/test
+          rm -rf /tmp/dist/alephzero/third_party/yyjson/test
+          echo "NO YT"
+          du -sh /tmp/dist
 
       - name: Archive Source
         run: |
-          tar -czvf alephzero-${GITHUB_REF##*/}.tar.gz .
+          tar -czvf ./alephzero-${GITHUB_REF##*/}.tar.gz /tmp/dist
           ls -l alephzero-${GITHUB_REF##*/}.tar.gz
+          zip -r ./alephzero-${GITHUB_REF##*/}.zip /tmp/dist
+          ls -l alephzero-${GITHUB_REF##*/}.zip
 
       # - name: Create Release
       #   id: create_release
