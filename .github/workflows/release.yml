@@ -25,11 +25,11 @@ jobs:
           rm -rf ./alephzero/third_party/picobench
 
           pushd ./alephzero/third_party/yyjson
-          ls -a -I src | xargs rm -rf
+          ls -a -I. -I.. -Isrc | xargs rm -rf
           popd
 
           pushd ./alephzero/third_party/json
-          ls -a -I single_include | xargs rm -rf
+          ls -a -I. -I.. -Isingle_include | xargs rm -rf
           popd
 
           # We've removed doctest and picobench, so no point keeping C++ unit tests.
