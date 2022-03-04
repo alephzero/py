@@ -42,10 +42,17 @@ jobs:
 
       - name: Archive Source
         run: |
-          tar -czvf ./alephzero-${GITHUB_REF##*/}.tar.gz /tmp/dist
-          ls -l alephzero-${GITHUB_REF##*/}.tar.gz
-          zip -r ./alephzero-${GITHUB_REF##*/}.zip /tmp/dist
-          ls -l alephzero-${GITHUB_REF##*/}.zip
+          pushd /tmp/dist
+          tar -czvf ./alephzero-${GITHUB_REF##*/}.tar.gz .
+          popd
+          cp /tmp/dist/alephzero-${GITHUB_REF##*/}.tar.gz .
+
+          pushd /tmp/dist
+          zip -r ./alephzero-${GITHUB_REF##*/}.zip .
+          popd
+          cp /tmp/dist/alephzero-${GITHUB_REF##*/}.zip .
+
+          ls -l alephzero-${GITHUB_REF##*/}.*
 
       # - name: Create Release
       #   id: create_release
