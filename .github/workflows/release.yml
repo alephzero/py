@@ -20,24 +20,23 @@ jobs:
 
       - name: Remove Unused Code
         run: |
-          echo "INIT"
-          du -sh .
           # Save ~396MB removing unused third_party.
-          rm -rf ./alephzero/third_party/doctest ./alephzero/third_party/json ./alephzero/third_party/picobench
-          echo "NO 3"
-          du -sh .
+          rm -rf ./alephzero/third_party/doctest
+          rm -rf ./alephzero/third_party/picobench
+
+          pushd ./alephzero/third_party/yyjson
+          ls -a -I src | xargs rm -rf
+          popd
+
+          pushd ./alephzero/third_party/json
+          ls -a -I single_include | xargs rm -rf
+          popd
+
           # We've removed doctest and picobench, so no point keeping C++ unit tests.
           rm -rf ./alephzero/src/bench ./alephzero/src/test
-          echo "NO T"
-          du -sh .
+
           # Save ~184MB dropping git history.
           rm -rf ./.git alephzero/.git alephzero/third_party/yyjson/.git
-          echo "NO G"
-          du -sh .
-          # Save ~5MB dropping yyjson/test.
-          rm -rf ./alephzero/third_party/yyjson/test
-          echo "NO YT"
-          du -sh .
 
       - name: Archive Source
         run: |
@@ -59,15 +58,25 @@ jobs:
       #     draft: false
       #     prerelease: false
 
-      # - name: Upload Release Asset
+      # - name: Upload tar.gz
       #   uses: actions/upload-release-asset@v1
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #   with:
       #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: tar -czvf alephzero-${GITHUB_REF##*/}.tar.gz
-      #     asset_name: tar -czvf alephzero-${GITHUB_REF##*/}.tar.gz
+      #     asset_path: ./archives/alephzero-${GITHUB_REF##*/}.tar.gz
+      #     asset_name: alephzero-${GITHUB_REF##*/}.tar.gz
       #     asset_content_type: application/gzip
+
+      # - name: Upload zip
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: ./archives/alephzero-${GITHUB_REF##*/}.zip
+      #     asset_name: alephzero-${GITHUB_REF##*/}.zip
+      #     asset_content_type: application/zip
 
   pip:
     name: Send to PyPI
