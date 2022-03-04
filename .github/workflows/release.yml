@@ -20,39 +20,33 @@ jobs:
 
       - name: Remove Unused Code
         run: |
-          cp -r . /tmp/dist
           echo "INIT"
-          du -sh /tmp/dist
+          du -sh .
           # Save ~396MB removing unused third_party.
-          rm -rf /tmp/dist/alephzero/third_party/doctest /tmp/dist/alephzero/third_party/json /tmp/dist/alephzero/third_party/picobench
+          rm -rf ./alephzero/third_party/doctest ./alephzero/third_party/json ./alephzero/third_party/picobench
           echo "NO 3"
-          du -sh /tmp/dist
+          du -sh .
           # We've removed doctest and picobench, so no point keeping C++ unit tests.
-          rm -rf /tmp/dist/alephzero/src/bench /tmp/dist/alephzero/src/test
+          rm -rf ./alephzero/src/bench ./alephzero/src/test
           echo "NO T"
-          du -sh /tmp/dist
+          du -sh .
           # Save ~184MB dropping git history.
-          rm -rf /tmp/dist/.git alephzero/.git alephzero/third_party/yyjson/.git
+          rm -rf ./.git alephzero/.git alephzero/third_party/yyjson/.git
           echo "NO G"
-          du -sh /tmp/dist
+          du -sh .
           # Save ~5MB dropping yyjson/test.
-          rm -rf /tmp/dist/alephzero/third_party/yyjson/test
+          rm -rf ./alephzero/third_party/yyjson/test
           echo "NO YT"
-          du -sh /tmp/dist
+          du -sh .
 
       - name: Archive Source
         run: |
-          pushd /tmp/dist
-          tar -czvf ./alephzero-${GITHUB_REF##*/}.tar.gz .
-          popd
-          cp /tmp/dist/alephzero-${GITHUB_REF##*/}.tar.gz .
+          mkdir archives
 
-          pushd /tmp/dist
-          zip -r ./alephzero-${GITHUB_REF##*/}.zip .
-          popd
-          cp /tmp/dist/alephzero-${GITHUB_REF##*/}.zip .
+          tar --exclude=./archives -czvf ./archives/alephzero-${GITHUB_REF##*/}.tar.gz .
+          zip -x ./archives -r ./archives/alephzero-${GITHUB_REF##*/}.zip .
 
-          ls -l alephzero-${GITHUB_REF##*/}.*
+          ls -l ./archives
 
       # - name: Create Release
       #   id: create_release
