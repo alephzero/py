@@ -31,8 +31,8 @@ jobs:
 
       - name: Archive Source
         run: |
-          tar -czvf alephzero-${GITHUB_REF#refs/tags/}.tar.gz .
-          ls -l alephzero-${GITHUB_REF#refs/tags/}.tar.gz
+          tar -czvf alephzero-${GITHUB_REF##*/}.tar.gz .
+          ls -l alephzero-${GITHUB_REF##*/}.tar.gz
 
       # - name: Create Release
       #   id: create_release
@@ -40,8 +40,8 @@ jobs:
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #   with:
-      #     tag_name: ${GITHUB_REF#refs/tags/}
-      #     release_name: Release ${GITHUB_REF#refs/tags/}
+      #     tag_name: ${GITHUB_REF##*/}
+      #     release_name: Release ${GITHUB_REF##*/}
       #     draft: false
       #     prerelease: false
 
@@ -51,8 +51,8 @@ jobs:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #   with:
       #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: tar -czvf alephzero-${GITHUB_REF#refs/tags/}.tar.gz
-      #     asset_name: tar -czvf alephzero-${GITHUB_REF#refs/tags/}.tar.gz
+      #     asset_path: tar -czvf alephzero-${GITHUB_REF##*/}.tar.gz
+      #     asset_name: tar -czvf alephzero-${GITHUB_REF##*/}.tar.gz
       #     asset_content_type: application/gzip
 
   pip:
