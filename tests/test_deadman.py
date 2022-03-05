@@ -1,5 +1,4 @@
 import a0
-import pytest
 import os
 
 
@@ -30,10 +29,6 @@ def test_deadman():
     s = d.state()
     assert s.is_taken
     assert s.is_owner
-
-    # with pytest.raises(RuntimeError) as err:
-    #     d.take(0.1)
-    # assert str(err.value) == "Resource deadlock avoided"
 
     d.release()
 
