@@ -10,7 +10,7 @@ on:
 jobs:
   release:
     name: Create Release
-    # if: startsWith(github.ref, 'refs/tags')
+    if: startsWith(github.ref, 'refs/tags')
     runs-on: ubuntu-latest
 
     steps:
@@ -45,38 +45,36 @@ jobs:
           tar --exclude=./archives -czvf ./archives/alephzero-${GITHUB_REF##*/}.tar.gz .
           zip -x ./archives -r ./archives/alephzero-${GITHUB_REF##*/}.zip .
 
-          ls -l ./archives
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${GITHUB_REF##*/}
+          release_name: Release ${GITHUB_REF##*/}
+          draft: false
+          prerelease: false
 
-      # - name: Create Release
-      #   id: create_release
-      #   uses: actions/create-release@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     tag_name: ${GITHUB_REF##*/}
-      #     release_name: Release ${GITHUB_REF##*/}
-      #     draft: false
-      #     prerelease: false
+      - name: Upload tar.gz
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./archives/alephzero-${GITHUB_REF##*/}.tar.gz
+          asset_name: alephzero-${GITHUB_REF##*/}.tar.gz
+          asset_content_type: application/gzip
 
-      # - name: Upload tar.gz
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ./archives/alephzero-${GITHUB_REF##*/}.tar.gz
-      #     asset_name: alephzero-${GITHUB_REF##*/}.tar.gz
-      #     asset_content_type: application/gzip
-
-      # - name: Upload zip
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ./archives/alephzero-${GITHUB_REF##*/}.zip
-      #     asset_name: alephzero-${GITHUB_REF##*/}.zip
-      #     asset_content_type: application/zip
+      - name: Upload zip
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./archives/alephzero-${GITHUB_REF##*/}.zip
+          asset_name: alephzero-${GITHUB_REF##*/}.zip
+          asset_content_type: application/zip
 
   pip:
     name: Send to PyPI
