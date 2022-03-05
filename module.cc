@@ -572,16 +572,59 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def("write_if_empty", py::overload_cast<a0::Packet>(&a0::Cfg::write_if_empty))
       .def("mergepatch", [](a0::Cfg* self, py::dict mergepatch_dict) {
         auto mergepatch_str = py::cast<std::string>(py::module_::import("json").attr("dumps")(mergepatch_dict));
-        auto yydoc = yyjson_read(mergepatch_str.c_str(), mergepatch_str.size(), 0);
-        auto err = a0_cfg_mergepatch_yyjson(self->c.get(), *yydoc);
-        yyjson_doc_free(yydoc);
-        if (err) {
-          throw std::runtime_error(a0_strerror(err));
-        }
+        self->mergepatch(std::move(mergepatch_str));
       });
 
   py::class_<a0::CfgWatcher, nogil_holder<a0::CfgWatcher>>(m, "CfgWatcher")
       .def(py::init<a0::CfgTopic, std::function<void(a0::Packet)>>());
+
+  py::class_<a0::DeadmanTopic>(m, "DeadmanTopic")
+      .def(py::init<std::string>(), py::arg("name"));
+
+  py::implicitly_convertible<std::string, a0::DeadmanTopic>();
+
+  py::class_<a0::Deadman> pydeadman(m, "Deadman");
+
+  py::class_<a0::Deadman::State>(pydeadman, "State")
+      .def_readonly("is_taken", &a0::Deadman::State::is_taken)
+      .def_readonly("is_owner", &a0::Deadman::State::is_owner)
+      .def_readonly("tkn", &a0::Deadman::State::tkn);
+
+  pydeadman
+      .def(py::init<a0::DeadmanTopic>())
+      .def("try_take", &a0::Deadman::try_take)
+      .def("take",
+           py::overload_cast<>(&a0::Deadman::take),
+           py::call_guard<py::gil_scoped_release>())
+      .def("take",
+           py::overload_cast<a0::TimeMono>(&a0::Deadman::take),
+           py::call_guard<py::gil_scoped_release>(),
+           py::arg("timeout"))
+      .def(
+          "take", [](a0::Deadman& self, double timeout) {
+            return self.take(a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)));
+          },
+          py::call_guard<py::gil_scoped_release>(), py::arg("timeout"))
+      .def("release", &a0::Deadman::release)
+      .def("wait_taken", py::overload_cast<>(&a0::Deadman::wait_taken), py::call_guard<py::gil_scoped_release>())
+      .def("wait_taken", py::overload_cast<a0::TimeMono>(&a0::Deadman::wait_taken), py::call_guard<py::gil_scoped_release>(), py::arg("timeout"))
+      .def(
+          "wait_taken", [](a0::Deadman& self, double timeout) {
+            return self.wait_taken(a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)));
+          },
+          py::call_guard<py::gil_scoped_release>(), py::arg("timeout"))
+      .def("wait_released", py::overload_cast<uint64_t>(&a0::Deadman::wait_released), py::call_guard<py::gil_scoped_release>(), py::arg("tkn"))
+      .def("wait_released", py::overload_cast<uint64_t, a0::TimeMono>(&a0::Deadman::wait_released), py::call_guard<py::gil_scoped_release>(), py::arg("tkn"), py::arg("timeout"))
+      .def(
+          "wait_released", [](a0::Deadman& self, uint64_t tkn, double timeout) {
+            return self.wait_released(tkn, a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)));
+          },
+          py::call_guard<py::gil_scoped_release>(), py::arg("tkn"), py::arg("timeout"))
+      .def("state", &a0::Deadman::state);
+
+  py::class_<a0::PathGlob>(m, "PathGlob")
+      .def(py::init<std::string>())
+      .def("match", &a0::PathGlob::match);
 
   py::class_<a0::Discovery, nogil_holder<a0::Discovery>>(m, "Discovery")
       .def(py::init<const std::string&, std::function<void(const std::string&)>>());
