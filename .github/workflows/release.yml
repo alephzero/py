@@ -18,6 +18,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Extract Flags
+        id: flags
+        run: |
+          echo ::set-output name=tag::${GITHUB_REF##*/}
+
       - name: Remove Unused Code
         run: |
           # Save ~396MB removing unused third_party.
@@ -42,8 +47,8 @@ jobs:
         run: |
           mkdir archives
 
-          tar --exclude=./archives -czvf ./archives/alephzero-${GITHUB_REF##*/}.tar.gz .
-          zip -x ./archives -r ./archives/alephzero-${GITHUB_REF##*/}.zip .
+          tar --exclude=./archives -czvf ./archives/alephzero.tar.gz .
+          zip -x ./archives -r ./archives/alephzero.zip .
 
       - name: Create Release
         id: create_release
@@ -62,8 +67,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./archives/alephzero-${GITHUB_REF##*/}.tar.gz
-          asset_name: alephzero-${GITHUB_REF##*/}.tar.gz
+          asset_path: ./archives/alephzero.tar.gz
+          asset_name: alephzero-${{ steps.flags.tag }}.tar.gz
           asset_content_type: application/gzip
 
       - name: Upload zip
@@ -72,8 +77,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./archives/alephzero-${GITHUB_REF##*/}.zip
-          asset_name: alephzero-${GITHUB_REF##*/}.zip
+          asset_path: ./archives/alephzero.zip
+          asset_name: alephzero-${{ steps.flags.tag }}.zip
           asset_content_type: application/zip
 
   pip:
