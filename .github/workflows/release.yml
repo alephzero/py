@@ -1,0 +1,117 @@
+name: Package Releases
+
+on:
+  push:
+    branches: [master]
+    tags: ["*"]
+  pull_request:
+    branches: [master]
+
+jobs:
+  release:
+    name: Create Release
+    if: startsWith(github.ref, 'refs/tags')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Remove Unused Code
+        run: |
+          # Save ~396MB removing unused third_party.
+          rm -rf ./alephzero/third_party/doctest
+          rm -rf ./alephzero/third_party/picobench
+
+          pushd ./alephzero/third_party/yyjson
+          ls -a -I. -I.. -Isrc | xargs rm -rf
+          popd
+
+          pushd ./alephzero/third_party/json
+          ls -a -I. -I.. -Isingle_include | xargs rm -rf
+          popd
+
+          # We've removed doctest and picobench, so no point keeping C++ unit tests.
+          rm -rf ./alephzero/src/bench ./alephzero/src/test
+
+          # Save ~184MB dropping git history.
+          rm -rf ./.git alephzero/.git alephzero/third_party/yyjson/.git
+
+      - name: Archive Source
+        run: |
+          mkdir archives
+
+          tar --exclude=./archives -czvf ./archives/alephzero-${GITHUB_REF##*/}.tar.gz .
+          zip -x ./archives -r ./archives/alephzero-${GITHUB_REF##*/}.zip .
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${GITHUB_REF##*/}
+          release_name: Release ${GITHUB_REF##*/}
+          draft: false
+          prerelease: false
+
+      - name: Upload tar.gz
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./archives/alephzero-${GITHUB_REF##*/}.tar.gz
+          asset_name: alephzero-${GITHUB_REF##*/}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload zip
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./archives/alephzero-${GITHUB_REF##*/}.zip
+          asset_name: alephzero-${GITHUB_REF##*/}.zip
+          asset_content_type: application/zip
+
+  pip:
+    name: Send to PyPI
+    if: startsWith(github.ref, 'refs/tags')
+
+    runs-on: ubuntu-latest
+    container:
+      image: "quay.io/pypa/manylinux_2_24_x86_64"
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: install apt deps
+        run: apt update && apt install -y python3-pip
+
+      - name: install pip deps
+        run: python3 -m pip install -U build pybind11 setuptools twine virtualenv wheel
+
+      - name: build package
+        run: python3 -m build
+
+      - name: auditwheel
+        run: |
+          for whl in dist/*-linux_x86_64.whl; do
+            auditwheel repair "$whl" -w dist/
+          done
+          rm dist/*-linux_x86_64.whl
+
+      - name: Publish distribution 📦 to Test PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
