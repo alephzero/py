@@ -22,21 +22,20 @@ class RemoteSubscriber:
     ):
         addr = f"ws://{remote_host}:{remote_port}/wsapi/sub"
         opts = make_opts(opts, init_, iter_)
-        handshake = json.dumps(
-            dict(
-                topic=topic,
-                init={
-                    INIT_AWAIT_NEW: "AWAIT_NEW",
-                    INIT_MOST_RECENT: "MOST_RECENT",
-                    INIT_OLDEST: "OLDEST",
-                }[opts.init],
-                iter={
-                    ITER_NEXT: "NEXT",
-                    ITER_NEWEST: "NEWEST",
-                }[opts.iter],
-                response_encoding=response_encoding,
-                scheduler=scheduler,
-            ))
+        handshake = {
+            "topic": topic,
+            "init": {
+                INIT_AWAIT_NEW: "AWAIT_NEW",
+                INIT_MOST_RECENT: "MOST_RECENT",
+                INIT_OLDEST: "OLDEST",
+            }[opts.init],
+            "iter": {
+                ITER_NEXT: "NEXT",
+                ITER_NEWEST: "NEWEST",
+            }[opts.iter],
+            "response_encoding": response_encoding,
+            "scheduler": scheduler,
+        }
 
         # State is a container for mutable variables that are referenced from
         # within both the threaded run function and the destructor.
@@ -60,21 +59,18 @@ class RemoteSubscriber:
             # backoff keeps track of the number of failed connection attempts.
             # It is reset when a connection is successful.
             backoff = 0
-            # last_seq is used to prevent executing the callback with repeated
-            # packets, if the connection is reset.
-            last_seq = None
             while state.running:
                 with state.cv:
                     try:
                         state.ws = websocket.create_connection(addr)
                         backoff = 0
-                    except ConnectionRefusedError as err:
+                    except ConnectionError:
                         state.ws = None
                         backoff += 1
                         state.cv.wait(timeout=min(5, (2**backoff) / 1000))
                         continue
 
-                state.ws.send(handshake)
+                state.ws.send(json.dumps(handshake))
 
                 while True:
                     try:
@@ -88,25 +84,19 @@ class RemoteSubscriber:
                         return
 
                     jmsg = json.loads(msg)
+                    headers = jmsg["headers"]
+                    payload = jmsg["payload"]
                     if response_encoding == "base64":
-                        jmsg["payload"] = base64.b64decode(jmsg["payload"])
+                        payload = base64.b64decode(payload)
 
                     # Use sequence numbers to remove duplicates, in case of reconnects.
-                    seq = [
-                        v for k, v in jmsg["headers"] if k == "a0_transport_seq"
-                    ]
-                    if len(seq) != 1:
-                        continue
                     try:
-                        seq = int(seq[0])
-                    except ValueError:
+                        seq_str = dict(headers).get("a0_transport_seq")
+                        handshake["init"] = int(seq_str) + 1
+                    except Exception:
                         continue
 
-                    if last_seq and seq <= last_seq:
-                        continue
-                    last_seq = seq
-
-                    callback(Packet(jmsg["headers"], jmsg["payload"]))
+                    callback(Packet(headers, payload))
 
         self._thread = threading.Thread(target=_run, args=(self._state,))
         self._thread.start()
