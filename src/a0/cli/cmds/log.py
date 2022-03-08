@@ -53,6 +53,6 @@ def echo(topic, level, init, iter):
 @click.argument("topic", shell_complete=_util.autocomplete_topics("log"))
 def clear(topic):
     """Clear the log history for the given topic."""
-    t = a0.Transport(a0.File(f"{topic}.log.a0"))
-    tl = t.lock()
-    tl.clear()
+    t = a0.Transport(a0.File(a0.env.topic_tmpl_log().format(topic=topic)))
+    tlk = t.lock()
+    tlk.clear()
