@@ -40,6 +40,15 @@ a0::string_view as_string_view(py::str& s) {
   return a0::string_view(data, size);
 }
 
+a0::Buf wrap_buffer(py::buffer pybuf, bool writable) {
+  auto info = pybuf.request(writable);
+  if (info.ndim != 1 || info.strides[0] != 1) {
+    throw py::type_error("Only unstrided 1D buffers are supported.");
+  }
+  size_t size = info.shape[0];
+  return a0::Buf((uint8_t*)info.ptr, size);
+}
+
 PYBIND11_MODULE(alephzero_bindings, m) {
   py::class_<a0::Arena> pyarena(m, "Arena");
   py::class_<a0::File> pyfile(m, "File");
@@ -50,11 +59,16 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .value("READONLY", A0_ARENA_MODE_READONLY);
 
   pyarena
+      .def(py::init([](py::buffer pybuf, a0_arena_mode_t mode) {
+        return a0::Arena(wrap_buffer(pybuf, mode != A0_ARENA_MODE_READONLY), mode);
+      }), py::keep_alive<1, 2>())
       .def(py::init([](a0::File file) { return a0::Arena(file); }))
-      .def_property_readonly("buf", [](a0::Arena* self) {
-        return py::memoryview::from_memory(self->buf().data(), self->buf().size());
-      })
-      .def_property_readonly("mode", [](a0::Arena* self) { return self->mode(); });
+      // Note: def_property_readonly doesn't properly handle keep_alive without py::cpp_function.
+      // https://github.com/pybind/pybind11/issues/2618
+      .def_property_readonly("buf", py::cpp_function([](const a0::Arena& self) {
+        return py::memoryview::from_memory(self.buf().data(), self.buf().size());
+      }, py::keep_alive<0, 1>()))
+      .def_property_readonly("mode", [](const a0::Arena& self) { return self.mode(); });
 
   py::class_<a0::File::Options> pyfileopts(pyfile, "Options");
 
@@ -79,8 +93,8 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def_property_readonly("size", &a0::File::size)
       .def_property_readonly("path", &a0::File::path)
       .def_property_readonly("fd", &a0::File::fd)
-      .def_property_readonly("stat", [](const a0::File* self) {
-        auto stat = self->stat();
+      .def_property_readonly("stat", [](const a0::File& self) {
+        auto stat = self.stat();
         auto os = py::module::import("os");
         return os.attr("stat_result")(py::make_tuple(
             stat.st_mode,
@@ -129,52 +143,70 @@ PYBIND11_MODULE(alephzero_bindings, m) {
            }),
            py::keep_alive<1, 3>())
       .def_property_readonly("id", &a0::Packet::id)
-      .def_property_readonly("headers", [](a0::Packet* self) {
+      .def_property_readonly("headers", [](const a0::Packet& self) {
         std::vector<std::pair<std::string, std::string>> ret;
-        for (auto& hdr : self->headers()) {
+        for (auto& hdr : self.headers()) {
           ret.push_back({hdr.first, hdr.second});
         }
         return ret;
       })
-      .def_property_readonly("payload", [](a0::Packet* self) {
-        return py::bytes(self->payload().data(), self->payload().size());
+      .def_property_readonly("payload", [](const a0::Packet& self) {
+        return py::bytes(self.payload().data(), self.payload().size());
       })
-      .def_property_readonly("payload_view", [](a0::Packet* self) {
-        return py::memoryview::from_memory((void*)self->payload().data(), self->payload().size(), /* readonly = */ true);
-      });
+      // Note: def_property_readonly doesn't properly handle keep_alive without py::cpp_function.
+      // https://github.com/pybind/pybind11/issues/2618
+      .def_property_readonly("payload_view", py::cpp_function([](const a0::Packet& self) {
+        return py::memoryview::from_memory((void*)self.payload().data(), self.payload().size(), /* readonly = */ true);
+      }, py::keep_alive<0, 1>()));
 
   py::implicitly_convertible<py::bytes, a0::Packet>();
   py::implicitly_convertible<py::str, a0::Packet>();
 
   py::class_<a0::Frame>(m, "Frame")
+      .def_static("from_buffer", [](py::buffer pybuf) {
+        return *(a0::Frame*)wrap_buffer(pybuf, false).data();
+      }, py::keep_alive<0, 1>())
       .def_property_readonly("seq", [](const a0::Frame& self) { return self.hdr.seq; })
       .def_property_readonly("off", [](const a0::Frame& self) { return self.hdr.off; })
-      .def_property_readonly("data", [](const a0::Frame& self) {
+      // Note: def_property_readonly doesn't properly handle keep_alive without py::cpp_function.
+      // https://github.com/pybind/pybind11/issues/2618
+      .def_property_readonly("data", py::cpp_function([](const a0::Frame& self) {
         return py::memoryview::from_memory(self.data, self.hdr.data_size);
-      });
+      }, py::keep_alive<0, 1>()))
+      // Note: def_property_readonly doesn't properly handle keep_alive without py::cpp_function.
+      // https://github.com/pybind/pybind11/issues/2618
+      .def_property_readonly("memory_view", py::cpp_function([](const a0::Frame& self) {
+        return py::memoryview::from_memory((void*)&self, sizeof(a0::Frame) + self.hdr.data_size, /* readonly = */ true);
+      }, py::keep_alive<0, 1>()));
 
   py::class_<a0::FlatPacket>(m, "FlatPacket")
-      .def(py::init([](const a0::Frame& frame) {
-        // TODO(lshamis): Construct from memoryview instead of Frame.
+      .def_static("from_buffer", [](py::buffer pybuf) {
         a0::FlatPacket fpkt;
-        fpkt.c = std::make_shared<a0_flat_packet_t>(a0_flat_packet_t{{frame.data, frame.hdr.data_size}});
+        fpkt.c = std::make_shared<a0_flat_packet_t>(a0_flat_packet_t{*wrap_buffer(pybuf, false).c});
         return fpkt;
-      }))
+      }, py::keep_alive<0, 1>())
       .def_property_readonly("id", &a0::FlatPacket::id)
-      .def_property_readonly("headers", [](a0::FlatPacket* self) {
+      .def_property_readonly("headers", [](const a0::FlatPacket& self) {
         std::vector<std::pair<std::string, std::string>> ret;
-        for (size_t i = 0; i < self->num_headers(); i++) {
-          auto hdr = self->header(i);
+        for (size_t i = 0; i < self.num_headers(); i++) {
+          auto hdr = self.header(i);
           ret.push_back({std::string(hdr.first), std::string(hdr.second)});
         }
         return ret;
       })
-      .def_property_readonly("payload", [](a0::FlatPacket* self) {
-        return py::bytes(self->payload().data(), self->payload().size());
+      .def_property_readonly("payload", [](const a0::FlatPacket& self) {
+        return py::bytes(self.payload().data(), self.payload().size());
       })
-      .def_property_readonly("payload_view", [](a0::FlatPacket* self) {
-        return py::memoryview::from_memory((void*)self->payload().data(), self->payload().size(), /* readonly = */ true);
-      });
+      // Note: def_property_readonly doesn't properly handle keep_alive without py::cpp_function.
+      // https://github.com/pybind/pybind11/issues/2618
+      .def_property_readonly("payload_view", py::cpp_function([](const a0::FlatPacket& self) {
+        return py::memoryview::from_memory((void*)self.payload().data(), self.payload().size(), /* readonly = */ true);
+      }, py::keep_alive<0, 1>()))
+      // Note: def_property_readonly doesn't properly handle keep_alive without py::cpp_function.
+      // https://github.com/pybind/pybind11/issues/2618
+      .def_property_readonly("memory_view", py::cpp_function([](const a0::FlatPacket& self) {
+        return py::memoryview::from_memory((void*)self.c->buf.data, self.c->buf.size, /* readonly = */ true);
+      }, py::keep_alive<0, 1>()));
 
   py::class_<a0::TimeMono>(m, "TimeMono")
       .def_static("now", &a0::TimeMono::now)
@@ -211,6 +243,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       .def("used_space", &a0::TransportLocked::used_space)
       .def("resize", &a0::TransportLocked::resize)
       .def("iter_valid", &a0::TransportLocked::iter_valid)
+      // TODO(lshamis): Should frame be marked with py::keep_alive<0, 1>()?
       .def("frame", &a0::TransportLocked::frame)
       .def("jump", &a0::TransportLocked::jump)
       .def("jump_head", &a0::TransportLocked::jump_head)
@@ -229,16 +262,16 @@ PYBIND11_MODULE(alephzero_bindings, m) {
            py::arg("fn"))
       .def(
           "wait",
-          [](a0::TransportLocked* self, std::function<bool()> fn, a0::TimeMono timeout) {
-            return self->wait_until(fn, timeout);
+          [](a0::TransportLocked& self, std::function<bool()> fn, a0::TimeMono timeout) {
+            return self.wait_until(fn, timeout);
           },
           py::call_guard<py::gil_scoped_release>(),
           py::arg("fn"),
           py::arg("timeout"))
       .def(
           "wait",
-          [](a0::TransportLocked* self, std::function<bool()> fn, double timeout) {
-            return self->wait_for(fn, std::chrono::nanoseconds(uint64_t(1e9 * timeout)));
+          [](a0::TransportLocked& self, std::function<bool()> fn, double timeout) {
+            return self.wait_for(fn, std::chrono::nanoseconds(uint64_t(1e9 * timeout)));
           },
           py::call_guard<py::gil_scoped_release>(),
           py::arg("fn"),
@@ -303,16 +336,16 @@ PYBIND11_MODULE(alephzero_bindings, m) {
            py::arg("fn"))
       .def(
           "read_blocking",
-          [](a0::ReaderSyncZeroCopy* self, std::function<void(a0::TransportLocked, a0::FlatPacket)> fn, a0::TimeMono timeout) {
-            self->read_blocking(timeout, fn);
+          [](a0::ReaderSyncZeroCopy& self, std::function<void(a0::TransportLocked, a0::FlatPacket)> fn, a0::TimeMono timeout) {
+            self.read_blocking(timeout, fn);
           },
           py::call_guard<py::gil_scoped_release>(),
           py::arg("fn"),
           py::arg("timeout"))
       .def(
           "read_blocking",
-          [](a0::ReaderSyncZeroCopy* self, std::function<void(a0::TransportLocked, a0::FlatPacket)> fn, double timeout) {
-            self->read_blocking(a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)), fn);
+          [](a0::ReaderSyncZeroCopy& self, std::function<void(a0::TransportLocked, a0::FlatPacket)> fn, double timeout) {
+            self.read_blocking(a0::TimeMono::now() + std::chrono::nanoseconds(int64_t(timeout * 1e9)), fn);
           },
           py::call_guard<py::gil_scoped_release>(),
           py::arg("fn"),
@@ -570,9 +603,9 @@ PYBIND11_MODULE(alephzero_bindings, m) {
           py::call_guard<py::gil_scoped_release>(), py::arg("timeout"))
       .def("write", py::overload_cast<a0::Packet>(&a0::Cfg::write))
       .def("write_if_empty", py::overload_cast<a0::Packet>(&a0::Cfg::write_if_empty))
-      .def("mergepatch", [](a0::Cfg* self, py::dict mergepatch_dict) {
+      .def("mergepatch", [](a0::Cfg& self, py::dict mergepatch_dict) {
         auto mergepatch_str = py::cast<std::string>(py::module_::import("json").attr("dumps")(mergepatch_dict));
-        self->mergepatch(std::move(mergepatch_str));
+        self.mergepatch(std::move(mergepatch_str));
       });
 
   py::class_<a0::CfgWatcher, nogil_holder<a0::CfgWatcher>>(m, "CfgWatcher")
