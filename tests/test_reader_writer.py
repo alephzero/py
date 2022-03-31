@@ -123,7 +123,8 @@ def test_read_zero_copy():
 
     def callback(tlk, fpkt):
         assert fpkt.payload == Want.payload
-        assert a0.FlatPacket.from_buffer(tlk.frame().data).payload == Want.payload
+        assert a0.FlatPacket.from_buffer(
+            tlk.frame().data).payload == Want.payload
         assert tlk.frame().off == Want.off
         assert tlk.frame().seq == Want.seq
         Want.checked = True

@@ -14,6 +14,7 @@ def test_arena_constructor():
 
 
 def test_arena_keep_alive():
+
     def make_arena():
         bytes_ = bytearray([0] * 4000)
         bytes_[3] = 4
@@ -24,6 +25,7 @@ def test_arena_keep_alive():
 
 
 def test_arena_buf_keep_alive():
+
     def make_arena_buf():
         bytes_ = bytearray([0] * 4000)
         bytes_[3] = 4
