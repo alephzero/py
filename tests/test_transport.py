@@ -21,23 +21,23 @@ def test_transport():
 
     tlk.jump_head()
     assert tlk.iter_valid()
-    assert a0.FlatPacket(tlk.frame()).payload == b"aaa"
+    assert a0.FlatPacket.from_buffer(tlk.frame().data).payload == b"aaa"
 
     tlk.jump_tail()
     assert tlk.iter_valid()
-    assert a0.FlatPacket(tlk.frame()).payload == b"ccc"
+    assert a0.FlatPacket.from_buffer(tlk.frame().data).payload == b"ccc"
 
     tlk.jump_head()
     assert tlk.has_next()
     tlk.step_next()
     assert tlk.iter_valid()
-    assert a0.FlatPacket(tlk.frame()).payload == b"bbb"
+    assert a0.FlatPacket.from_buffer(tlk.frame().data).payload == b"bbb"
 
     tlk.jump_tail()
     assert tlk.has_prev()
     tlk.step_prev()
     assert tlk.iter_valid()
-    assert a0.FlatPacket(tlk.frame()).payload == b"bbb"
+    assert a0.FlatPacket.from_buffer(tlk.frame().data).payload == b"bbb"
 
     @contextlib.contextmanager
     def thread_sleep_write(pkt, timeout):
@@ -56,12 +56,12 @@ def test_transport():
     with thread_sleep_write("ddd", timeout=0.1):
         tlk.wait(tlk.has_next)
         tlk.step_next()
-        assert a0.FlatPacket(tlk.frame()).payload == b"ddd"
+        assert a0.FlatPacket.from_buffer(tlk.frame().data).payload == b"ddd"
 
     with thread_sleep_write("eee", timeout=0.1):
         tlk.wait(tlk.has_next, timeout=0.2)
         tlk.step_next()
-        assert a0.FlatPacket(tlk.frame()).payload == b"eee"
+        assert a0.FlatPacket.from_buffer(tlk.frame().data).payload == b"eee"
 
     with thread_sleep_write("fff", timeout=0.2):
         with pytest.raises(RuntimeError, match="Connection timed out"):
