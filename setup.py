@@ -20,7 +20,7 @@ module = Pybind11Extension(
 )
 
 setuptools.setup(name="alephzero",
-                 version="0.3.15",
+                 version="0.3.16",
                  description="TODO: description",
                  author="Leonid Shamis",
                  author_email="leonid.shamis@gmail.com",

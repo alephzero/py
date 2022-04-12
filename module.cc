@@ -162,9 +162,9 @@ PYBIND11_MODULE(alephzero_bindings, m) {
   py::implicitly_convertible<py::bytes, a0::Packet>();
   py::implicitly_convertible<py::str, a0::Packet>();
 
-  py::class_<a0::Frame>(m, "Frame")
+  py::class_<a0::Frame, std::unique_ptr<a0::Frame, py::nodelete>>(m, "Frame")
       .def_static("from_buffer", [](py::buffer pybuf) {
-        return *(a0::Frame*)wrap_buffer(pybuf, false).data();
+        return (a0::Frame*)wrap_buffer(pybuf, false).data();
       }, py::keep_alive<0, 1>())
       .def_property_readonly("seq", [](const a0::Frame& self) { return self.hdr.seq; })
       .def_property_readonly("off", [](const a0::Frame& self) { return self.hdr.off; })
@@ -176,7 +176,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
       // Note: def_property_readonly doesn't properly handle keep_alive without py::cpp_function.
       // https://github.com/pybind/pybind11/issues/2618
       .def_property_readonly("memory_view", py::cpp_function([](const a0::Frame& self) {
-        return py::memoryview::from_memory((void*)&self, sizeof(a0::Frame) + self.hdr.data_size, /* readonly = */ true);
+        return py::memoryview::from_memory((void*)&self, sizeof(a0_transport_frame_hdr_t) + self.hdr.data_size, /* readonly = */ true);
       }, py::keep_alive<0, 1>()));
 
   py::class_<a0::FlatPacket>(m, "FlatPacket")
