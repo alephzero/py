@@ -23,8 +23,13 @@ def test_flatpacket_from_buffer():
     assert fpkt.payload == b"foo"
 
     frame_bytes = b"\x01\x00\x00\x00\x00\x00\x00\x00\x90\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x008\x00\x00\x00\x00\x00\x00\x00F5C71FCC-8B80-4C2E-BD78-7F669E9591AA\x00\x00\x00\x00\x00\x00\x00\x00\x005\x00\x00\x00\x00\x00\x00\x00foo"
+    fpkt_bytes = b"F5C71FCC-8B80-4C2E-BD78-7F669E9591AA\x00\x00\x00\x00\x00\x00\x00\x00\x005\x00\x00\x00\x00\x00\x00\x00foo"
     frame = a0.Frame.from_buffer(frame_bytes)
 
     assert bytes(frame.memory_view) == frame_bytes
-    fpkt = a0.FlatPacket.from_buffer(bytes(frame.data))
+    assert fpkt_bytes == bytes(frame.data)
+    fpkt = a0.FlatPacket.from_buffer(frame.data)
+    assert fpkt.payload == b"foo"
+
+    fpkt = a0.FlatPacket.from_buffer(fpkt_bytes)
     assert fpkt.payload == b"foo"

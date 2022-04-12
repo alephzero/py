@@ -179,7 +179,7 @@ PYBIND11_MODULE(alephzero_bindings, m) {
         return py::memoryview::from_memory((void*)&self, sizeof(a0_transport_frame_hdr_t) + self.hdr.data_size, /* readonly = */ true);
       }, py::keep_alive<0, 1>()));
 
-  py::class_<a0::FlatPacket, std::unique_ptr<a0::FlatPacket, py::nodelete>>(m, "FlatPacket")
+  py::class_<a0::FlatPacket>(m, "FlatPacket")
       .def_static("from_buffer", [](py::buffer pybuf) {
         a0::FlatPacket fpkt;
         fpkt.c = std::make_shared<a0_flat_packet_t>(a0_flat_packet_t{*wrap_buffer(pybuf, false).c});
