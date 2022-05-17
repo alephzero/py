@@ -18,7 +18,7 @@ class RemoteSubscriber:
         iter_=None,
         remote_port=24880,
         response_encoding="base64",
-        scheduler="IMMEDIATE",
+        scheduler="ON_DRAIN",
     ):
         addr = f"ws://{remote_host}:{remote_port}/wsapi/sub"
         opts = make_opts(opts, init_, iter_)
