@@ -29,3 +29,17 @@ def autocomplete_topics(protocol):
         ]
 
     return fn
+
+
+def abspath(path):
+    if path.startswith("./"):
+        return os.path.abspath(path)
+    return os.path.abspath(os.path.join(a0.env.root(),
+                                        os.path.expanduser(path)))
+
+
+def autocomplete_files(ctx, param, incomplete):
+    abspath_prefix = abspath(incomplete)
+    detected = glob.glob(abspath_prefix + "*") + glob.glob(
+        abspath_prefix + "**/*.a0", recursive=True)
+    return [path for path in detected if path.endswith(".a0")]
