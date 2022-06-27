@@ -1,6 +1,5 @@
 import a0
 import click
-import signal
 import sys
 from . import _util
 
@@ -22,7 +21,9 @@ from . import _util
                                 case_sensitive=False),
               default="newline",
               show_default=True)
-def cli(file, init, iter, delim):
+@click.option("--count", "-n", type=click.INT)
+@click.option("--duration", "-t", type=_util.ClickDuration())
+def cli(file, init, iter, delim, count=None, duration=None):
     """Echo the messages written on the given file."""
     init = getattr(a0.ReaderInit, init.upper())
     iter = getattr(a0.ReaderIter, iter.upper())
@@ -33,21 +34,18 @@ def cli(file, init, iter, delim):
         "newline": b"\n",
     }[delim]
 
-    # Remove click SIGINT handler.
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    class State:
-        reader = None
+    stream = _util.StreamHelper(count, duration)
+    stream.install_sighandlers()
 
     def onpkt(pkt):
         try:
             sys.stdout.buffer.write(pkt.payload)
             sys.stdout.buffer.write(sep)
             sys.stdout.flush()
+            stream.increment_count()
         except BrokenPipeError:
-            State.reader = None
+            stream.shutdown()
 
-    State.reader = a0.Reader(a0.File(_util.abspath(file)), init, iter, onpkt)
+    reader = a0.Reader(a0.File(_util.abspath(file)), init, iter, onpkt)
 
-    # Wait for SIGINT (ctrl+c).
-    signal.pause()
+    stream.wait_shutdown()

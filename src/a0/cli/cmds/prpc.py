@@ -1,7 +1,6 @@
 import a0
 import click
 import sys
-import threading
 from . import _util
 
 
@@ -19,8 +18,7 @@ from . import _util
 def cli(topic, value, header, file, stdin, delim):
     """Send an prpc on a given topic."""
     if file and stdin:
-        print("file and stdin are mutually exclusive", file=sys.stderr)
-        sys.exit(-1)
+        _util.fail("file and stdin are mutually exclusive")
 
     header = list(kv.split("=", 1) for kv in header)
 
@@ -37,21 +35,20 @@ def cli(topic, value, header, file, stdin, delim):
         "newline": b"\n",
     }[delim]
 
-    class State:
-        done = False
-        cv = threading.Condition()
+    stream = _util.StreamHelper()
+    stream.install_sighandlers()
 
     def onprogress(pkt, done):
-        sys.stdout.buffer.write(pkt.payload)
-        sys.stdout.buffer.write(sep)
-        sys.stdout.flush()
-        if done:
-            with State.cv:
-                State.done = True
-                State.cv.notify()
+        try:
+            sys.stdout.buffer.write(pkt.payload)
+            sys.stdout.buffer.write(sep)
+            sys.stdout.flush()
+            if done:
+                stream.shutdown()
+        except BrokenPipeError:
+            stream.shutdown()
 
     client = a0.PrpcClient(topic)
     client.connect(a0.Packet(header, payload), onprogress)
 
-    with State.cv:
-        State.cv.wait_for(lambda: State.done)
+    stream.wait_shutdown()

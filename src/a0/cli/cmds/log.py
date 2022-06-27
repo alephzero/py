@@ -1,6 +1,5 @@
 import a0
 import click
-import signal
 from . import _util
 
 
@@ -33,20 +32,21 @@ def ls():
                                 case_sensitive=False),
               default=a0.ReaderIter.NEXT.name,
               show_default=True)
-def echo(topic, level, init, iter):
+@click.option("--count", "-n", type=click.INT)
+@click.option("--duration", "-t", type=_util.ClickDuration())
+def echo(topic, level, init, iter, count=None, duration=None):
     """Echo the messages logged on the given topic."""
     level = getattr(a0.LogLevel, level.upper())
     init = getattr(a0.ReaderInit, init.upper())
     iter = getattr(a0.ReaderIter, iter.upper())
 
-    # Remove click SIGINT handler.
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    stream = _util.StreamHelper(count, duration)
+    stream.install_sighandlers()
 
     ll = a0.LogListener(topic, level, init, iter,
                         lambda pkt: print(pkt.payload.decode()))
 
-    # Wait for SIGINT (ctrl+c).
-    signal.pause()
+    stream.wait_shutdown()
 
 
 @cli.command()
