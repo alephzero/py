@@ -1,7 +1,12 @@
 import a0
+import click
+import datetime
 import glob
 import os
+import re
+import signal
 import sys
+import threading
 
 
 def fail(msg):
@@ -43,3 +48,75 @@ def autocomplete_files(ctx, param, incomplete):
     detected = glob.glob(abspath_prefix + "*") + glob.glob(
         abspath_prefix + "**/*.a0", recursive=True)
     return [path for path in detected if path.endswith(".a0")]
+
+
+def isfloat(num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
+
+
+class ClickDuration(click.ParamType):
+    name = "duration"
+
+    def convert(self, value, param, ctx):
+        if isinstance(value, datetime.timedelta):
+            return value
+
+        if isfloat(value):
+            return datetime.timedelta(seconds=float(value))
+
+        pattern = r'^((?P<hours>[\.\d]+?)h)?((?P<minutes>[\.\d]+?)m)?((?P<seconds>[\.\d]+?)s)?$'
+
+        parts = re.match(pattern, value)
+        if parts is None:
+            self.fail(
+                f"{value!r} is not valid. Use something like '1m3s', '63s', or '63'",
+                param, ctx)
+
+        return datetime.timedelta(
+            **{
+                key: float(group_val)
+                for key, group_val in parts.groupdict().items()
+                if group_val
+            })
+
+    def __repr__(self) -> str:
+        return "Duration"
+
+
+class StreamHelper:
+
+    def __init__(self, max_count=None, duration=None):
+        self.max_count = max_count
+        self.timeout = duration.total_seconds() if duration else None
+
+        self.cv = threading.Condition()
+        self.count = 0
+        self.closing = False
+
+    def shutdown(self):
+        with self.cv:
+            self.closing = True
+            self.cv.notify()
+
+    def increment_count(self):
+        with self.cv:
+            self.count += 1
+            if self.max_count is not None and self.count >= self.max_count:
+                self.shutdown()
+
+    def wait_shutdown(self):
+        with self.cv:
+            self.cv.wait_for(lambda: self.closing, timeout=self.timeout)
+
+    def install_sighandlers(self):
+
+        def onsigint(*args, **kwargs):
+            with self.cv:
+                self.closing = True
+                self.cv.notify()
+
+        signal.signal(signal.SIGINT, onsigint)
