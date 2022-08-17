@@ -100,3 +100,25 @@ def update_configs():
             if tid in obj:
                 del obj[tid]
         cfg.registry = next_reg
+
+
+class cfg2:
+
+    def __init__(self, topic, jptr=None, type_=None):
+        self._cfg_reader = Cfg(topic)
+        self._jptr = jptr
+        self._type = type_
+
+    def get(self):
+        cfg_val = json.loads(self._cfg_reader.read().payload.decode())
+        if self._jptr:
+            cfg_val = jsonpointer.resolve_pointer(cfg_val, self._jptr)
+
+        if not self._type:
+            return cfg_val
+        elif type(cfg_val) == dict:
+            return cfg_val if self._type == dict else self._type(**cfg_val)
+        elif type(cfg_val) == list:
+            return cfg_val if self._type == list else self._type(*cfg_val)
+        else:
+            return self._type(cfg_val)
