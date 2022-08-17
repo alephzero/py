@@ -1,5 +1,6 @@
 import a0
 import json
+import jsonpointer
 import pytest
 import threading
 import time
@@ -203,3 +204,170 @@ async def test_aio_cfg():
     assert (await a0.aio_cfg_one("topic")).payload == b"done"
 
     t.join()
+
+
+def test_cfg2_int(cfg):
+    bar = a0.cfg2("topic", "/bar", int)
+
+    assert bar.get() == 3
+
+    cfg.write(
+        json.dumps({
+            "bar": 4,
+            "foo": {
+                "a": "abc",
+                "b": "bcd",
+            },
+            "bat": [1, 2, 3],
+        }))
+
+    assert bar.get() == 4
+
+    cfg.write(json.dumps({
+        "x": "y",
+    }))
+
+    with pytest.raises(jsonpointer.JsonPointerException,
+                       match="member 'bar' not found in {'x': 'y'}"):
+        bar.get()
+
+    cfg.write(json.dumps({
+        "bar": "not an int",
+    }))
+
+    with pytest.raises(
+            ValueError,
+            match=r"invalid literal for int\(\) with base 10: 'not an int'"):
+        bar.get()
+
+
+def test_cfg2_str(cfg):
+    a = a0.cfg2("topic", "/foo/a", str)
+
+    assert a.get() == "aaa"
+
+    cfg.write(
+        json.dumps({
+            "bar": 4,
+            "foo": {
+                "a": "abc",
+                "b": "bcd",
+            },
+            "bat": [1, 2, 3],
+        }))
+
+    assert a.get() == "abc"
+
+    cfg.write(json.dumps({
+        "foo": {
+            "b": "bcd",
+        },
+    }))
+
+    with pytest.raises(jsonpointer.JsonPointerException,
+                       match="member 'a' not found in {'b': 'bcd'}"):
+        a.get()
+
+    cfg.write(json.dumps({
+        "bar": 4,
+    }))
+
+    with pytest.raises(jsonpointer.JsonPointerException,
+                       match="member 'foo' not found in {'bar': 4}"):
+        a.get()
+
+    cfg.write(json.dumps({
+        "foo": {
+            "a": [5, 6, 7, 8],
+        },
+    }))
+
+    with pytest.raises(TypeError):
+        a.get()
+
+
+def test_cfg2_dict(cfg):
+    foo = a0.cfg2("topic", "/foo", dict)
+
+    assert foo.get() == {"a": "aaa", "b": "bbb"}
+
+    cfg.write(
+        json.dumps({
+            "bar": 4,
+            "foo": {
+                "a": "abc",
+                "b": "bcd",
+            },
+            "bat": [1, 2, 3],
+        }))
+
+    assert foo.get() == {"a": "abc", "b": "bcd"}
+
+    cfg.write(json.dumps({
+        "foo": [1, 2, 3],
+    }))
+
+    with pytest.raises(TypeError):
+        foo.get()
+
+
+def test_cfg2_list(cfg):
+    val = a0.cfg2("topic", "/bat", list)
+    assert val.get() == [1, 2, 3]
+
+
+def test_cfg2_class(cfg):
+
+    class Foo:
+
+        def __init__(self, a, b):
+            self.a = a
+            self.b = b
+
+    foo_cfg = a0.cfg2("topic", "/foo", Foo)
+
+    foo = foo_cfg.get()
+    assert type(foo) == Foo
+    assert foo.a == "aaa"
+    assert foo.b == "bbb"
+
+    cfg.write(
+        json.dumps({
+            "bar": 4,
+            "foo": {
+                "a": "abc",
+                "b": "bcd",
+            },
+            "bat": [1, 2, 3],
+        }))
+
+    foo = foo_cfg.get()
+    assert type(foo) == Foo
+    assert foo.a == "abc"
+    assert foo.b == "bcd"
+
+
+def test_cfg2_default_type(cfg):
+    assert type(a0.cfg2("topic", "/bar").get()) == int
+    assert type(a0.cfg2("topic", "/foo").get()) == dict
+    assert type(a0.cfg2("topic", "/bat").get()) == list
+
+    assert a0.cfg2("topic", "/bar").get() == 3
+    assert a0.cfg2("topic", "/foo").get() == {
+        "a": "aaa",
+        "b": "bbb",
+    }
+    assert a0.cfg2("topic", "/bat").get() == [1, 2, 3]
+
+
+def test_cfg2_nojptr(cfg):
+    assert type(a0.cfg2("topic").get()) == dict
+
+    assert a0.cfg2("topic").get() == {
+        "bar": 3,
+        "bat": [1, 2, 3],
+        "foo": {
+            "a": "aaa",
+            "b": "bbb"
+        },
+    }
